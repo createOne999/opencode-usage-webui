@@ -67,7 +67,11 @@ const context: ContextInput = {
           name: "read",
           result: { type: "text", value: "file result" },
         },
-        { type: "future", something: { new: "shape" } },
+        {
+          type: "future",
+          something: { new: "shape" },
+          data: { extension: "preserved" },
+        },
       ],
     },
   ],
@@ -112,6 +116,7 @@ describe("normalization, privacy and accounting", () => {
     expect(parts[9].payload).toEqual({
       type: "future",
       something: { new: "shape" },
+      data: { extension: "preserved" },
     });
     expect(parts[2].message_index).toBe(2);
     expect(parts[3].part_index).toBe(1);

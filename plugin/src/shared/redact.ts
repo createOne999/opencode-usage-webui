@@ -70,7 +70,11 @@ export function sanitize(value: unknown, maxBytes = 2097152): unknown {
       budget -= Buffer.byteLength(key) + 4;
       result[key] = secretKey.test(key)
         ? "[REDACTED]"
-        : /^(data|base64|bytes)$/i.test(key)
+        : /^(base64|bytes)$/i.test(key) ||
+            (key === "data" &&
+              ["base64", "bytes", "image", "file"].includes(
+                String((item as Record<string, unknown>).type),
+              ))
           ? "[BINARY OMITTED]"
           : visit(child, depth + 1);
     }
