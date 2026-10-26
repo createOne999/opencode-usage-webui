@@ -18,6 +18,9 @@ the commit, not a movable tag, identifies the inspected source).
 - `packages/core/src/plugin/module.ts`: local sources use `createPluginSources`,
   package targets use `Npm.add` / `Npm.resolve` and `Host.load`. The npm utility
   owns package installation/cache revisions; do not copy a single bundle manually.
+  `packages/util/src/npm.ts` installs under `<global.cache>/npm/<target-key>`,
+  uses an install lock and staged immutable generations, resolves npm or Git
+  targets, and retains manifest/Git revisions for activation and update detection.
 - `packages/core/src/plugin/source-directory.ts`: discovery accepts `plugin` and
   `plugins` beneath config directories (project `.opencode`, global config root).
   This repository deliberately uses root `opencode.jsonc -> ./plugin` instead.
@@ -39,17 +42,17 @@ Exact Promise interfaces: `packages/plugin/src/promise/session.ts` and
 registration with `dispose()`. These drafts are mutable: observation must never
 change them, return replacement prompts or throw logging errors into them.
 
-| Hook | Available observation |
-| --- | --- |
-| prompt | sessionID, messageID, admitted prompt/metadata/delivery; not each model call |
-| context | sessionID, model `{providerID,id}`, agent, ordered system/messages, tools, options |
-| compaction | context shape and optional result; summary prompt is appended **after** hook |
-| generate | context shape; transient session generation, not necessarily a durable step |
-| title | sessionID/model/system/messages/options/result; no tools or agent |
-| model.request | sessionID/agent/model/kind and transport settings; no stable request ID |
-| http.request | same identity, native one-shot Request |
-| http.response | same identity, Request and Response |
-| retry | sessionID/agent/model/error/attempt/decision; never mutate decision |
+| Hook          | Available observation                                                              |
+| ------------- | ---------------------------------------------------------------------------------- |
+| prompt        | sessionID, messageID, admitted prompt/metadata/delivery; not each model call       |
+| context       | sessionID, model `{providerID,id}`, agent, ordered system/messages, tools, options |
+| compaction    | context shape and optional result; summary prompt is appended **after** hook       |
+| generate      | context shape; transient session generation, not necessarily a durable step        |
+| title         | sessionID/model/system/messages/options/result; no tools or agent                  |
+| model.request | sessionID/agent/model/kind and transport settings; no stable request ID            |
+| http.request  | same identity, native one-shot Request                                             |
+| http.response | same identity, Request and Response                                                |
+| retry         | sessionID/agent/model/error/attempt/decision; never mutate decision                |
 
 Kinds are `primary`, `compaction`, `title`, `generate`. A context hook creates one
 logical request, not one row for every HTTP retry. Raw transport bodies are off
@@ -133,3 +136,19 @@ One OpenCode process owns the writable DB and same-process UI/API. Migrations ru
 transactionally with a schema ledger; retain a backup before a future destructive
 upgrade. DuckDB 2.0 storage/VARIANT may not be readable by older DuckDB engines:
 do not silently downgrade, and export Parquet/JSON before changing major versions.
+
+## Core verification (worker runtime)
+
+`@duckdb/node-api` is pinned to **2.0.0-r.1**, whose engine reports **v2.0.0**
+under Bun **1.4.2** on Windows. `bun test` exercises the real native binding,
+transactional migrations, restart/reopen, VARIANT persistence, parameterized
+filtering, hourly/session aggregates, Parquet export and a loopback Bun HTTP
+handler querying the same owning connection. `bunfig.toml` limits discovery to
+this project's tests, avoiding execution of the read-only upstream test tree.
+
+The plugin entrypoint and production server are owned by a separate integration
+task; a real OpenCode-loaded plugin smoke remains required there. The runtime
+spike proves Bun/native compatibility, not that final entrypoint lifecycle wiring.
+Time presets and aggregates use UTC. Offline seed prices are reference estimates,
+not live quotes; absent prices remain unknown. JSON/JSONL export materializes its
+filtered selection; use native Parquet export for a large analytical history.

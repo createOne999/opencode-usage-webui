@@ -1,0 +1,18 @@
+{
+  "name": "opencode-usage-dashboard",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "plugin"
+  ],
+  "scripts": {
+    "test": "bun test ./tests",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write plugin/src tests docs/opencode-integration.md package.json tsconfig.json opencode.jsonc"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.0",
+    "typescript": "^5.9.3",
+    "prettier": "^3.6.2"
+  }
+}

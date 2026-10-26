@@ -1,0 +1,8 @@
+{
+  "name": "opencode-local-request-inspector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./index.ts" },
+  "dependencies": { "@duckdb/node-api": "2.0.0-r.1" }
+}
