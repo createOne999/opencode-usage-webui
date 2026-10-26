@@ -63,8 +63,16 @@ Headers/baseURL credentials are intentionally not captured by this implementatio
 
 `ctx.event.subscribe({signal})` is an async iterable, not a callback registration.
 Abort it on cleanup. Source: `packages/plugin/src/promise` and
-`packages/schema/src/session-event.ts`. Public events have `type` and `properties`;
-durable events add metadata. Filter to the plugin's location/session ownership.
+`packages/schema/src/session-event.ts`, confirmed against the wire contracts in
+`packages/client/src/promise/generated/types.ts`. Public V2 events have `type`
+and **`data`**, plus event ID/time and optional metadata/location; durable events
+also carry aggregate/sequence/version. The entrypoint adapts `event.data` into the
+collector's internal `properties` field; that field is not the native wire shape.
+Filter to captured session/request identities before attaching output or usage.
+`packages/plugin/src/promise/adapter.ts` scopes iterators to each plugin instance:
+every loaded location owns its own abortable iterator, even when it shares the
+writer/server. A bounded event-ID set suppresses duplicate delivery to that shared
+collector; unloading one location cannot terminate another location's capture.
 
 - `session.step.started`: sessionID, assistantMessageID, model, agent, started.
 - `session.text.started/ended`, `session.reasoning.started/ended`: assistant ID,
@@ -78,8 +86,11 @@ durable events add metadata. Filter to the plugin's location/session ownership.
 - `session.execution.*`: execution status, not necessarily a single model call.
 
 Emission authority: `packages/core/src/session/runner/publish-llm-event.ts`.
-AI messages contain ordered parts: text, reasoning, tool-call/tool-result, image,
-file and provider-specific/native variants. System is a separate ordered array;
+`packages/ai/src/schema/messages.ts` defines ordered text, reasoning,
+tool-call/tool-result and **media** parts, plus compaction/effort variants. The
+normalizer maps media assets to image/file metadata using `media.kind` or
+`media.mediaType`, retaining unknown variants as typed structured payloads.
+System is a separate ordered array;
 tools are a named dictionary. Keep unknown variants with original type/payload,
 and image/file metadata without base64 binary content by default.
 
@@ -146,9 +157,17 @@ filtering, hourly/session aggregates, Parquet export and a loopback Bun HTTP
 handler querying the same owning connection. `bunfig.toml` limits discovery to
 this project's tests, avoiding execution of the read-only upstream test tree.
 
-The plugin entrypoint and production server are owned by a separate integration
-task; a real OpenCode-loaded plugin smoke remains required there. The runtime
-spike proves Bun/native compatibility, not that final entrypoint lifecycle wiring.
+`tests/opencode-smoke.test.ts` now verifies the actual installed **OpenCode 2.1.4**
+CLI: a private `serve --stdio` process starts with isolated temporary XDG state,
+loads the checked-in root config's **`./plugin` directory / `plugin/index.ts`**,
+reports the plugin **active**, and exposes same-process **DuckDB v2.0.0** through
+the loopback health API. Closing stdin exits the private process successfully
+without replacing the user's managed service or making a paid model request.
+The complete opt-in suite passes **30 tests / 229 assertions**, including HTTP,
+coordinated deletion and plugin lifecycle/failure-isolation checks; typecheck also
+passes. A real Chromium check verified eight overview cards, literal script-shaped
+prompt rendering (no execution), ordered role blocks, session drill-down and the
+three-tier/metric controls. No live paid-provider completion was exercised.
 Time presets and aggregates use UTC. Offline seed prices are reference estimates,
 not live quotes; absent prices remain unknown. JSON/JSONL export materializes its
 filtered selection; use native Parquet export for a large analytical history.
