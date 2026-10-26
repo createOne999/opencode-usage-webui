@@ -111,6 +111,7 @@ test("HTTP serves offline UI, health, overview snapshots, hourly/session details
       },
     });
     expect(indexPage.status).toBe(200);
+    expect((await f.request("/favicon.ico")).status).toBe(204);
     const cssRes = await f.request("/styles.css", {
       headers: { Host: `localhost:${f.server.port}` },
     });

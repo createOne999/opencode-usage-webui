@@ -129,6 +129,8 @@ export function startServer(
       const respond = (data: unknown, status = 200) =>
         Response.json(data, { status, headers });
       try {
+        if (request.method === "GET" && url.pathname === "/favicon.ico")
+          return new Response(null, { status: 204, headers });
         const asset =
           request.method === "GET" ? uiFiles[url.pathname] : undefined;
         if (asset) {
