@@ -1,0 +1,9 @@
+reference/
+node_modules/
+dist/
+*.duckdb
+*.duckdb.wal
+.env*
+.DS_Store
+coverage/
+tmp/
