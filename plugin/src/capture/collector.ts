@@ -291,6 +291,53 @@ export class Collector {
   async flush() {
     await this.tail;
   }
+  async deleteData(selection: {
+    all?: boolean;
+    session?: string;
+    request?: string;
+    olderThanDays?: number;
+  }) {
+    if (
+      [
+        Boolean(selection.all),
+        Boolean(selection.session),
+        Boolean(selection.request),
+        selection.olderThanDays !== undefined,
+      ].filter(Boolean).length !== 1 ||
+      (selection.olderThanDays !== undefined &&
+        (!Number.isInteger(selection.olderThanDays) ||
+          selection.olderThanDays < 1))
+    )
+      throw new Error("Invalid deletion selection");
+    // Serialize deletion with capture, including contexts already queued but not yet written.
+    const result = this.tail.then(async () => {
+      const cutoff =
+        selection.olderThanDays === undefined
+          ? null
+          : Date.now() - selection.olderThanDays * 86400000;
+      for (const [id, state] of this.active) {
+        if (
+          selection.all ||
+          selection.request === id ||
+          selection.session === state.request.session_id ||
+          (cutoff !== null && Date.parse(state.request.started_at) < cutoff)
+        ) {
+          this.active.delete(id);
+          this.correlator.remove(id);
+        }
+      }
+      if (selection.all) await this.repository.deleteAll();
+      else if (selection.request)
+        await this.repository.deleteRequest(selection.request);
+      else if (selection.session)
+        await this.repository.deleteSession(selection.session);
+      else if (selection.olderThanDays !== undefined)
+        await this.repository.deleteOlderThanDays(selection.olderThanDays);
+      else throw new Error("A deletion selection is required");
+    });
+    this.tail = result.catch(() => this.warn("Inspector deletion failed"));
+    return result;
+  }
   async close() {
     if (this.closed) return;
     this.closed = true;

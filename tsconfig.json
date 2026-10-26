@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["plugin/src/**/*.ts", "tests/**/*.ts"],
+  "include": ["plugin/index.ts", "plugin/src/**/*.ts", "tests/**/*.ts"],
   "exclude": ["reference", "node_modules"]
 }
