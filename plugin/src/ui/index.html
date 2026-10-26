@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenCode · Usage &amp; Request Inspector</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <h1>
+            OpenCode
+            <span class="brand-sub">/ Usage &amp; Request Inspector</span>
+          </h1>
+          <span class="tag-pill">Local-First · DuckDB 2.0 · UTC</span>
+        </div>
+        <div class="topbar-actions">
+          <div id="healthBadge" class="health-badge" title="DuckDB status">
+            <span class="status-dot" id="healthDot"></span>
+            <span id="healthText">Connecting…</span>
+          </div>
+          <button type="button" id="quickRefresh" class="btn btn-primary">
+            Refresh
+          </button>
+        </div>
+      </div>
+      <nav class="nav-tabs" id="navTabs" aria-label="Dashboard sections">
+        <button
+          type="button"
+          class="nav-tab active"
+          data-tab="all"
+          aria-pressed="true"
+        >
+          All / Dashboard
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          data-tab="hourly"
+          aria-pressed="false"
+        >
+          Hourly · 시간당 모니터링
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          data-tab="sessions"
+          aria-pressed="false"
+        >
+          Sessions · 세션별 모니터링
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          data-tab="requests"
+          aria-pressed="false"
+        >
+          Requests &amp; Inspector
+        </button>
+        <button
+          type="button"
+          class="nav-tab"
+          data-tab="export"
+          aria-pressed="false"
+        >
+          Data &amp; Export
+        </button>
+      </nav>
+    </header>
+
+    <main class="container">
+      <form id="filters" class="filter-bar" aria-label="Request filters">
+        <div class="filter-grid">
+          <label>
+            <span>Time range</span>
+            <select name="preset" id="presetSelect">
+              <option value="today">Today</option>
+              <option value="7d" selected>7 days</option>
+              <option value="30d">30 days</option>
+              <option value="month">This month</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </label>
+          <label>
+            <span>From (UTC)</span>
+            <input name="from" id="fromInput" type="datetime-local" />
+          </label>
+          <label>
+            <span>To (UTC, excl.)</span>
+            <input name="to" id="toInput" type="datetime-local" />
+          </label>
+          <label>
+            <span>Project</span>
+            <input name="project" placeholder="Project ID" />
+          </label>
+          <label>
+            <span>Session</span>
+            <input name="session" placeholder="Session ID" />
+          </label>
+          <label>
+            <span>Provider</span>
+            <input name="provider" placeholder="e.g. anthropic, openai" />
+          </label>
+          <label>
+            <span>Model</span>
+            <input name="model" placeholder="e.g. claude, gpt-4o" />
+          </label>
+          <label>
+            <span>Request Kind</span>
+            <select name="kind">
+              <option value="">All kinds</option>
+              <option value="primary">primary</option>
+              <option value="compaction">compaction</option>
+              <option value="title">title</option>
+              <option value="generate">generate</option>
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select name="status">
+              <option value="">All statuses</option>
+              <option value="success">success</option>
+              <option value="error">error</option>
+              <option value="running">running</option>
+              <option value="pending">pending</option>
+              <option value="incomplete">incomplete</option>
+            </select>
+          </label>
+          <label class="filter-search">
+            <span>Prompt / payload search</span>
+            <input
+              name="search"
+              type="search"
+              placeholder="Search system, user, assistant, tool text…"
+            />
+          </label>
+        </div>
+        <div class="filter-footer">
+          <label class="check-label">
+            <input name="hideAuxiliary" type="checkbox" checked />
+            <span>Hide auxiliary (compaction / title / generate)</span>
+          </label>
+          <div id="activeFilterStrip" class="active-filter-strip"></div>
+          <div class="filter-buttons">
+            <button type="button" id="resetFilters" class="btn">
+              Reset Filters
+            </button>
+            <button type="submit" class="btn btn-primary">
+              Apply / Refresh
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div
+        id="error"
+        class="status-banner"
+        role="status"
+        aria-live="polite"
+      ></div>
+
+      <section
+        class="kpi-section"
+        data-section="overview"
+        aria-label="Key metrics overview"
+      >
+        <div id="cards" class="cards"></div>
+      </section>
+
+      <section class="panel" data-section="overview">
+        <div class="panel-header">
+          <div>
+            <h2>3-Tier Token Usage · 3단 사용량 구조</h2>
+            <p class="muted">
+              Request-level OpenCode/provider usage totals separated into Tier 1
+              (Gross Input Context), Tier 2 (Cache Read &amp; Write), and Tier 3
+              (Non-Cache Pure Usage).
+            </p>
+          </div>
+        </div>
+        <div id="tiers" class="tier-grid"></div>
+        <div class="stack-wrap">
+          <div class="stack-header">
+            <span class="stack-title">Token Composition Breakdown</span>
+            <span id="tierStackSummary" class="muted"></span>
+          </div>
+          <div
+            id="tierStackBar"
+            class="stack-bar"
+            role="img"
+            aria-label="Token composition bar"
+          ></div>
+          <div id="tierStackLegend" class="stack-legend"></div>
+        </div>
+      </section>
+
+      <section class="panel" data-section="overview">
+        <div class="panel-header">
+          <div>
+            <h2>Individual Token Metrics · 개별 토큰 메트릭 필터</h2>
+            <p class="muted">
+              Filter requests with nonzero usage in a specific token bucket and
+              switch daily/hourly token charts to that metric.
+            </p>
+          </div>
+        </div>
+        <div
+          id="metrics"
+          class="metric-pills"
+          role="group"
+          aria-label="Filter requests by token metric"
+        ></div>
+      </section>
+
+      <section class="panel" data-section="overview">
+        <div class="panel-header">
+          <div>
+            <h2>Part / Role Usage Breakdown · 개별 역할/파트별 사용량</h2>
+            <p class="muted">
+              Estimated part attribution · character-weighted, scaled to request
+              totals; never provider-reported per-message cache counts. Covers
+              <code>system</code>, <code>user</code>, <code>assistant</code>,
+              <code>tool_call</code>, <code>tool_result</code>,
+              <code>reasoning</code>, <code>tool_def</code>, <code>image</code>,
+              <code>file</code>, and <code>unknown</code>.
+            </p>
+          </div>
+        </div>
+        <div id="roleBars" class="role-bars"></div>
+        <div id="roles" class="scroll"></div>
+      </section>
+
+      <section class="panel" data-section="hourly">
+        <div class="panel-header">
+          <div>
+            <h2>
+              Hourly Monitoring · 시간당 단위 모니터링 &amp; Daily Analytics
+            </h2>
+            <p class="muted">
+              Daily cost, token, and request trends alongside UTC hourly 3-tier
+              token monitoring and per-hour role breakdown.
+            </p>
+          </div>
+        </div>
+        <div id="dailyCharts" class="charts-grid"></div>
+        <div class="split-grid">
+          <div class="subpanel">
+            <h3>Cache-read vs uncached input</h3>
+            <div id="cacheChart"></div>
+          </div>
+          <div class="subpanel">
+            <h3>Provider / model cost share</h3>
+            <div id="share" class="scroll"></div>
+          </div>
+        </div>
+        <div class="subpanel">
+          <div id="hourChart"></div>
+        </div>
+        <div id="hourly" class="scroll"></div>
+        <p class="muted footnote">
+          ¹ Costs prefer OpenCode-accounted values, then local catalog
+          estimates; missing costs are excluded. Neither is guaranteed
+          provider-billed.
+        </p>
+      </section>
+
+      <section class="panel" data-section="sessions">
+        <div class="panel-header">
+          <div>
+            <h2>Session Monitoring · 세션 단위 모니터링</h2>
+            <p class="muted">
+              Click any session ID to inspect its 3-tier summary, role
+              attribution, and filter the request table to that session.
+            </p>
+          </div>
+        </div>
+        <div id="sessionDetail" class="session-banner"></div>
+        <div id="sessions" class="scroll"></div>
+        <div class="pages">
+          <button type="button" id="sessionPrev" class="btn">
+            Previous sessions
+          </button>
+          <span id="sessionPage" class="page-info"></span>
+          <button type="button" id="sessionNext" class="btn">
+            Next sessions
+          </button>
+        </div>
+      </section>
+
+      <section class="panel" data-section="requests">
+        <div class="panel-header">
+          <div>
+            <h2>Requests · 요청 목록</h2>
+            <p class="muted">
+              Select any request to inspect normalized prompt/response parts,
+              tool calls/results, reasoning blocks, and raw payloads below.
+            </p>
+          </div>
+        </div>
+        <div id="requests" class="scroll"></div>
+        <div class="pages">
+          <button type="button" id="prev" class="btn">Previous</button>
+          <span id="page" class="page-info"></span>
+          <button type="button" id="next" class="btn">Next</button>
+        </div>
+      </section>
+
+      <section
+        id="inspector"
+        class="panel inspector-panel"
+        data-section="requests"
+        aria-label="Request detail"
+      ></section>
+
+      <section class="panel" data-section="export">
+        <div class="panel-header">
+          <div>
+            <h2>Export &amp; Local Data · 데이터 내보내기 및 정리</h2>
+            <p class="muted">
+              Exports honor current filters. Prompts and responses may contain
+              source code; all data stays on this machine.
+            </p>
+          </div>
+        </div>
+        <div class="export-controls">
+          <div class="control-group">
+            <span class="group-label">Export filtered requests</span>
+            <div class="btn-row">
+              <button type="button" class="btn" data-export="json">
+                Export JSON
+              </button>
+              <button type="button" class="btn" data-export="jsonl">
+                Export JSONL
+              </button>
+              <button type="button" class="btn" data-export="parquet">
+                Export Parquet
+              </button>
+            </div>
+          </div>
+          <div class="control-group">
+            <span class="group-label">Retention policy</span>
+            <div class="btn-row">
+              <label class="inline-field">
+                <span>Retention days</span>
+                <input id="days" type="number" min="1" max="36500" value="90" />
+              </label>
+              <button type="button" id="retention" class="btn">
+                Run retention cleanup
+              </button>
+            </div>
+          </div>
+          <div class="control-group">
+            <span class="group-label">Delete local data</span>
+            <div class="btn-row">
+              <button type="button" id="deleteSession" class="btn btn-danger">
+                Delete filtered session
+              </button>
+              <button type="button" id="deleteRequest" class="btn btn-danger">
+                Delete selected request
+              </button>
+              <button type="button" id="deleteAll" class="btn btn-danger">
+                Delete all local data
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

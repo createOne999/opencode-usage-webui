@@ -1,11 +1,22 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import type { Repository } from "../db/repository.ts";
 import type { Collector } from "../capture/collector.ts";
 import type { Config } from "../shared/config.ts";
 import type { RequestFilters } from "../shared/types.ts";
 import { presetRange } from "../db/repository.ts";
-import { ui } from "../ui/ui.ts";
+
+const csp =
+  "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
+const uiFiles: Record<string, { name: string; type: string; csp?: string }> = {
+  "/": { name: "index.html", type: "text/html; charset=utf-8", csp },
+  "/index.html": { name: "index.html", type: "text/html; charset=utf-8", csp },
+  "/styles.css": { name: "styles.css", type: "text/css; charset=utf-8" },
+  "/app.js": {
+    name: "app.js",
+    type: "application/javascript; charset=utf-8",
+  },
+};
 
 class BadRequest extends Error {}
 export function parseFilters(query: URLSearchParams): RequestFilters {
@@ -91,12 +102,22 @@ export function startServer(
     async fetch(request) {
       const url = new URL(request.url);
       // Reject DNS rebinding and cross-site reads/writes; loopback has no authentication.
-      const expected = `127.0.0.1:${server.port}`;
-      if (request.headers.get("host") !== expected)
+      const hosts = new Set([
+        `127.0.0.1:${server.port}`,
+        `localhost:${server.port}`,
+        `[::1]:${server.port}`,
+      ]);
+      const host = request.headers.get("host");
+      if (!host || !hosts.has(host))
         return new Response("Invalid host", { status: 403 });
+      const origins = new Set([
+        `http://127.0.0.1:${server.port}`,
+        `http://localhost:${server.port}`,
+        `http://[::1]:${server.port}`,
+      ]);
       const origin = request.headers.get("origin");
       if (
-        (origin && origin !== `http://${expected}`) ||
+        (origin && !origins.has(origin)) ||
         request.headers.get("sec-fetch-site") === "cross-site"
       )
         return new Response("Cross-origin access denied", { status: 403 });
@@ -108,15 +129,20 @@ export function startServer(
       const respond = (data: unknown, status = 200) =>
         Response.json(data, { status, headers });
       try {
-        if (request.method === "GET" && url.pathname === "/")
-          return new Response(ui, {
+        const asset =
+          request.method === "GET" ? uiFiles[url.pathname] : undefined;
+        if (asset) {
+          const body = await readFile(
+            join(import.meta.dir, "../ui", asset.name),
+          );
+          return new Response(body, {
             headers: {
               ...headers,
-              "Content-Type": "text/html; charset=utf-8",
-              "Content-Security-Policy":
-                "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+              "Content-Type": asset.type,
+              ...(asset.csp ? { "Content-Security-Policy": asset.csp } : {}),
             },
           });
+        }
         if (request.method === "GET" && url.pathname === "/api/health")
           return respond({
             status: "ok",

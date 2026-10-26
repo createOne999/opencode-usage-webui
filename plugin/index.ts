@@ -131,6 +131,7 @@ export default {
       if (!config.enabled) return;
       key = resolve(config.dataDir);
       let pending = runtimes.get(key);
+      const existing = Boolean(pending);
       if (!pending) {
         pending = createRuntime(config, warn);
         runtimes.set(key, pending);
@@ -140,6 +141,24 @@ export default {
       }
       runtime = await pending;
       runtime.references++;
+      if (existing) {
+        const port = config.port || runtime.server?.port || 0;
+        try {
+          await runtime.server?.stop(true);
+        } catch {
+          warn("Local UI shutdown failed");
+        }
+        try {
+          runtime.server = startServer(
+            new Repository(runtime.db),
+            runtime.collector,
+            { ...config, port },
+          );
+        } catch {
+          runtime.server = undefined;
+          warn("Local UI could not bind; request capture remains active");
+        }
+      }
       const owner = runtime;
       // OpenCode scopes each event iterator to its plugin instance; surviving locations need their own iterator.
       events = (async () => {

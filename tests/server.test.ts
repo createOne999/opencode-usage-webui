@@ -10,6 +10,7 @@ import { readConfig } from "../plugin/src/shared/config.ts";
 import { startServer } from "../plugin/src/server/server.ts";
 import { normalizeContext } from "../plugin/src/capture/normalizer.ts";
 import { attributeTokens } from "../plugin/src/shared/tokens.ts";
+import plugin from "../plugin/index.ts";
 import type { ContextInput } from "../plugin/src/shared/types.ts";
 
 const tempRoot =
@@ -96,10 +97,35 @@ test("HTTP serves offline UI, health, overview snapshots, hourly/session details
     }
     const page = await f.request("/");
     expect(page.status).toBe(200);
+    expect(page.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(page.headers.get("content-security-policy")).toContain(
+      "script-src 'self'",
+    );
     expect(page.headers.get("content-security-policy")).toContain(
       "frame-ancestors 'none'",
     );
+    const indexPage = await f.request("/index.html", {
+      headers: {
+        Host: `localhost:${f.server.port}`,
+        Origin: `http://localhost:${f.server.port}`,
+      },
+    });
+    expect(indexPage.status).toBe(200);
+    const cssRes = await f.request("/styles.css", {
+      headers: { Host: `localhost:${f.server.port}` },
+    });
+    expect(cssRes.status).toBe(200);
+    expect(cssRes.headers.get("content-type")).toBe("text/css; charset=utf-8");
+    expect(await cssRes.text()).toContain("--accent");
+    const jsRes = await f.request("/app.js", {
+      headers: { Host: `[::1]:${f.server.port}` },
+    });
+    expect(jsRes.status).toBe(200);
+    expect(jsRes.headers.get("content-type")).toBe(
+      "application/javascript; charset=utf-8",
+    );
     const html = await page.text();
+    const js = await jsRes.text();
     for (const label of [
       "3-Tier Token Usage",
       "Hourly Monitoring",
@@ -108,11 +134,9 @@ test("HTTP serves offline UI, health, overview snapshots, hourly/session details
       "Export JSON",
       "Cache read",
     ])
-      expect(html).toContain(label);
-    expect(html).not.toMatch(/<script[^>]+src=|<link[^>]+href=/);
-    expect(
-      () => new Function(html.match(/<script>([\s\S]*)<\/script>/)![1]),
-    ).not.toThrow();
+      expect(html + "\n" + js).toContain(label);
+    expect(html).not.toMatch(/https?:\/\//);
+    expect(() => new Function(js)).not.toThrow();
     const health = await f.get("/api/health");
     expect(health.duckdb_version).toMatch(/^v2\.0\./);
     expect(health.dataDir).toBe(f.dir);
@@ -326,5 +350,63 @@ test("retention cleanup removes matching rows but keeps recent active capture", 
     ).rejects.toThrow();
   } finally {
     await f.close();
+  }
+});
+
+test("setup() replaces an older cached runtime.server on hot-reload", async () => {
+  const dir = await mkdtemp(join(tempRoot, "inspector-reload-"));
+  const runtimeKey = Symbol.for("opencode-usage-dashboard.runtimes.v1");
+  const runtimes = (
+    globalThis as typeof globalThis & {
+      [runtimeKey]?: Map<
+        string,
+        Promise<{ server?: ReturnType<typeof Bun.serve> }>
+      >;
+    }
+  )[runtimeKey]!;
+  const makeCtx = () => ({
+    options: { dataDir: dir, port: 0 },
+    location: { directory: process.cwd(), project: { id: "project-reload" } },
+    session: {
+      async hook() {
+        return { async dispose() {} };
+      },
+    },
+    event: {
+      subscribe({ signal }: { signal: AbortSignal }) {
+        return new ReadableStream({
+          start(controller) {
+            signal.addEventListener("abort", () => controller.close(), {
+              once: true,
+            });
+          },
+        });
+      },
+    },
+  });
+  let close1: (() => Promise<void>) | undefined;
+  let close2: (() => Promise<void>) | undefined;
+  try {
+    close1 = await plugin.setup(makeCtx());
+    const runtime = await runtimes.get(dir)!;
+    const port = runtime.server!.port!;
+    await runtime.server!.stop(true);
+    // Simulate a stale server from an older load bound on the same port.
+    runtime.server = Bun.serve({
+      hostname: "127.0.0.1",
+      port,
+      fetch: () => new Response("stale-ui", { status: 200 }),
+    });
+    expect(
+      await (await fetch(`http://127.0.0.1:${port}/styles.css`)).text(),
+    ).toBe("stale-ui");
+    close2 = await plugin.setup(makeCtx());
+    const upgraded = await fetch(`http://localhost:${port}/styles.css`);
+    expect(upgraded.status).toBe(200);
+    expect(await upgraded.text()).toContain("--accent");
+  } finally {
+    await close2?.();
+    await close1?.();
+    await rm(dir, { recursive: true, force: true });
   }
 });
