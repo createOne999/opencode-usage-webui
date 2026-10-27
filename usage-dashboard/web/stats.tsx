@@ -1,12 +1,13 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { SessionStatsInfo } from "@opencode/client"
-import { ArrowDownWideNarrow, Coins, Layers, Terminal, Zap } from "lucide-react"
+import { ArrowDownWideNarrow, Coins, Layers, RefreshCw, Terminal, Zap } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { NativeSelect } from "@/components/ui/native-select"
-import { Board, Notice, useApi } from "./shared"
+import { api, Board, Notice, useApi } from "./shared"
 import { colors, UsageChart } from "./charts"
-import { dateTime, money, number, statsQuery, tokenNumber, totalTokens, type Filters } from "./data"
+import { dailyStatsQueries, dateTime, money, number, statsQuery, tokenNumber, totalTokens, type Filters } from "./data"
 
 export type StatsSection = "overview" | "models" | "tools"
 
@@ -35,7 +36,7 @@ export function StatsView(props: { stats: SessionStatsInfo; section: StatsSectio
       <UsageChart title="날짜별 모델 Steps" description="활동 기록이 있는 날짜만 표시합니다." data={stats.activity.map((day) => ({ label: day.date, steps: day.steps }))} series={[{ key: "steps", name: "Steps", color: colors[0]! }]} />
       <UsageChart title="토큰 구성" tokens data={[{ label: "입력", tokens: stats.tokens.input }, { label: "출력", tokens: stats.tokens.output }, { label: "추론", tokens: stats.tokens.reasoning }, { label: "캐시 읽기", tokens: stats.tokens.cache.read }, { label: "캐시 쓰기", tokens: stats.tokens.cache.write }]} series={[{ key: "tokens", name: "토큰", color: colors[1]! }]} />
     </div>
-    <p className="footnote">Steps는 논리적 모델 실행 수이며 HTTP 요청 수가 아닙니다. 날짜별 토큰·비용은 집계 API에서 제공하지 않습니다.</p>
+    <p className="footnote">Steps는 논리적 모델 실행 수이며 HTTP 요청 수가 아닙니다. 일별 토큰은 아래에서 하루 단위 집계를 별도 조회합니다.</p>
     {notes}
   </div>
 
@@ -56,10 +57,47 @@ export function StatsView(props: { stats: SessionStatsInfo; section: StatsSectio
   </div>
 }
 
+type DailyTokenUsage = { date: string; tokens: SessionStatsInfo["tokens"] }
+
+export function DailyTokens(props: { filters: Filters }) {
+  const [data, setData] = useState<DailyTokenUsage[]>()
+  const [progress, setProgress] = useState<{ loaded: number; total: number }>()
+  const [error, setError] = useState<string>()
+  const controller = useRef<AbortController | null>(null)
+  useEffect(() => () => controller.current?.abort(), [])
+  async function load() {
+    if (progress) return
+    const abort = new AbortController()
+    controller.current = abort
+    setError(undefined)
+    setData(undefined)
+    try {
+      const queries = dailyStatsQueries(props.filters)
+      const rows: DailyTokenUsage[] = []
+      setProgress({ loaded: 0, total: queries.length })
+      for (const day of queries) {
+        const stats = await api<SessionStatsInfo>(`/api/stats?${day.query}`, abort.signal)
+        if (abort.signal.aborted) return
+        rows.push({ date: day.date, tokens: stats.tokens })
+        setProgress({ loaded: rows.length, total: queries.length })
+      }
+      setData(rows)
+    } catch (cause) { if (!abort.signal.aborted) setError(cause instanceof Error ? cause.message : "일별 토큰을 불러오지 못했습니다.") }
+    finally { if (!abort.signal.aborted) setProgress(undefined) }
+  }
+  return <section className="space-y-4" aria-label="일별 토큰 조회" aria-busy={!!progress}>
+    <div className="section-heading"><div><h2 className="section-title">일별 토큰 사용량</h2><p className="section-description">{props.filters.from} ~ {props.filters.to} · 브라우저 시간대 · 1일 단위</p></div><Button variant="outline" onClick={load} disabled={!!progress}><RefreshCw aria-hidden="true" className={progress ? "motion-safe:animate-spin" : ""} />{progress ? "일별 토큰 조회 중…" : data ? "일별 토큰 새로고침" : "일별 토큰 불러오기"}</Button></div>
+    <p className="footnote">버튼을 누르면 하루당 한 번씩 순차 조회합니다(최대 100일). Steps가 없는 날도 압축 사용량이 있을 수 있어 모든 날짜를 조회합니다. 전체 세션이나 대화 본문은 수집하지 않습니다.</p>
+    {progress && <p role="status" className="text-xs text-muted-foreground">{progress.loaded} / {progress.total}일 조회 완료</p>}
+    <Notice error={error} retry={load} />
+    {data && <UsageChart title="날짜별 토큰 사용량" description="입력은 비캐시 입력, 출력은 추론 제외입니다. 압축 토큰을 포함하며 캐시 읽기·쓰기는 구분합니다." line tokens data={data.map((day) => ({ label: day.date, input: day.tokens.input, output: day.tokens.output, reasoning: day.tokens.reasoning, cacheRead: day.tokens.cache.read, cacheWrite: day.tokens.cache.write }))} series={[{ key: "input", name: "입력", color: colors[0]! }, { key: "output", name: "출력", color: colors[1]! }, { key: "reasoning", name: "추론", color: colors[2]! }, { key: "cacheRead", name: "캐시 읽기", color: colors[3]! }, { key: "cacheWrite", name: "캐시 쓰기", color: colors[4]! }]} />}
+  </section>
+}
+
 export function StatsPage(props: { filters: Filters; section: StatsSection }) {
   let query: string | undefined
   let error: string | undefined
   try { query = statsQuery(props.filters.from, props.filters.to, props.filters.project) } catch (cause) { error = cause instanceof Error ? cause.message : "조회 기간을 확인해 주세요." }
   const resource = useApi<SessionStatsInfo>(query ? `/api/stats?${query}` : undefined)
-  return <div aria-busy={resource.loading}><Notice loading={resource.loading} error={error || resource.error} retry={error ? undefined : resource.reload} />{resource.data && <StatsView stats={resource.data} section={props.section} />}</div>
+  return <div className="space-y-6" aria-busy={resource.loading}><Notice loading={resource.loading} error={error || resource.error} retry={error ? undefined : resource.reload} />{resource.data && <><StatsView stats={resource.data} section={props.section} />{props.section === "overview" && <DailyTokens key={query} filters={props.filters} />}</>}</div>
 }

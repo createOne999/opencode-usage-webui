@@ -1,26 +1,26 @@
 import { describe, expect, test } from "bun:test"
 import { renderToStaticMarkup } from "react-dom/server"
 import { App } from "../web/app"
-import { StatsView } from "../web/stats"
+import { DailyTokens, StatsView } from "../web/stats"
 import { ContextView } from "../web/sessions"
-import { number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
+import { dailyStatsQueries, number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
 import { recordedMessage, requestSummary, type HistoryPage } from "../history"
 import { messages, stats } from "./fixtures"
 
 describe("usage pages", () => {
-  test("formats only token counts with lowercase k, m, b, and t suffixes", () => {
-    for (const [value, formatted] of [[0, "0"], [999, "999"], [1_000, "1k"], [1_234, "1.23k"], [999_999, "1m"], [1_000_000, "1m"], [1_000_000_000, "1b"], [1_234_567_890_123, "1.23t"]] as const) expect(tokenNumber(value)).toBe(formatted)
+  test("formats only token counts with uppercase K, M, B, and T suffixes", () => {
+    for (const [value, formatted] of [[0, "0"], [999, "999"], [1_000, "1K"], [1_234, "1.23K"], [999_999, "1M"], [1_000_000, "1M"], [1_000_000_000, "1B"], [1_234_567_890_123, "1.23T"]] as const) expect(tokenNumber(value)).toBe(formatted)
     expect(number(1_234)).toBe("1,234")
     const tokens = { ...stats.tokens, input: 1_234_567 }
     const overview = renderToStaticMarkup(<StatsView stats={{ ...stats, tokens, steps: 1_234 }} section="overview" />)
-    expect(overview).toContain("1.23m")
+    expect(overview).toContain("1.23M")
     expect(overview).toContain("1,234")
     const models = renderToStaticMarkup(<StatsView stats={{ ...stats, models: [{ ...stats.models[0]!, tokens }] }} section="models" />)
-    expect(models).toContain("1.23m")
+    expect(models).toContain("1.23M")
     const selected = messages.find((message) => message.id === "msg_selected")!
     if (selected.type !== "assistant") throw new Error("bad fixture")
     const context = renderToStaticMarkup(<ContextView data={{ request: requestSummary({ ...selected, tokens }), response: recordedMessage(selected), data: [] }} hasOlder={false} />)
-    expect(context).toContain("입력 1.23m")
+    expect(context).toContain("입력 1.23M")
   })
 
   test("renders separate pages with shared navigation and URL-preserving filters", () => {
@@ -78,6 +78,46 @@ describe("usage pages", () => {
     expect(points[0]?.cost).toBe(0)
     expect(points.at(-1)?.input).toBeNull()
     expect(points.at(-1)?.cost).toBeNull()
+  })
+
+  test("builds contiguous daily queries including inactive dates and the end date", () => {
+    const filters = { from: "2026-10-25", to: "2026-10-27", project: "all" }
+    const days = dailyStatsQueries(filters)
+    expect(days.map((day) => day.date)).toEqual(["2026-10-25", "2026-10-26", "2026-10-27"])
+    for (let index = 0; index < days.length; index++) {
+      const query = new URLSearchParams(days[index]!.query)
+      expect(query.get("tools")).toBe("none")
+      expect(query.get("project")).toBe("all")
+      expect(query.get("timezone")).toBeTruthy()
+      expect(Number(query.get("from"))).toBe(new Date(2026, 9, 25 + index).getTime())
+      expect(Number(query.get("to"))).toBe(new Date(2026, 9, 26 + index).getTime())
+    }
+    expect(dailyStatsQueries({ from: "2024-02-28", to: "2024-03-01", project: "" }).map((day) => day.date)).toEqual(["2024-02-28", "2024-02-29", "2024-03-01"])
+    expect(dailyStatsQueries({ from: "2026-12-31", to: "2027-01-01", project: "" }).map((day) => day.date)).toEqual(["2026-12-31", "2027-01-01"])
+    expect(dailyStatsQueries({ from: "2026-10-27", to: "2026-10-27", project: "" })).toHaveLength(1)
+    const html = renderToStaticMarkup(<DailyTokens filters={filters} />)
+    for (const text of ["일별 토큰 불러오기", "1일 단위", "최대 100일", "2026-10-25", "2026-10-27"]) expect(html).toContain(text)
+    expect(html).not.toContain("날짜별 토큰 사용량 데이터")
+  })
+
+  test("bounds daily calls and rejects invalid periods before fetching", () => {
+    expect(dailyStatsQueries({ from: "2026-01-01", to: "2026-04-10", project: "" })).toHaveLength(100)
+    expect(() => dailyStatsQueries({ from: "2026-01-01", to: "2026-04-11", project: "" })).toThrow("최대 100일")
+    expect(() => dailyStatsQueries({ from: "2026-02-30", to: "2026-03-01", project: "" })).toThrow()
+    expect(() => dailyStatsQueries({ from: "2026-10-28", to: "2026-10-27", project: "" })).toThrow()
+  })
+
+  test("uses calendar days across both daylight-saving transitions", () => {
+    const result = Bun.spawnSync([process.execPath, "--eval", `
+      import { dailyStatsQueries } from "../web/data.ts"
+      const ranges = [["2026-03-07", "2026-03-09"], ["2026-10-31", "2026-11-02"]]
+      console.log(JSON.stringify(ranges.map(([from, to]) => dailyStatsQueries({ from, to, project: "" }).map((day) => {
+        const query = new URLSearchParams(day.query)
+        return (Number(query.get("to")) - Number(query.get("from"))) / 3_600_000
+      }))))
+    `], { cwd: import.meta.dir, env: { ...process.env, TZ: "America/New_York" } })
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout.toString())).toEqual([[24, 23, 24], [24, 25, 24]])
   })
 
   test("includes the end date, validates calendar dates, and preserves request cursors in links", () => {

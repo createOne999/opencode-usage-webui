@@ -9,7 +9,7 @@ export type Projects = {
 
 export const number = (value: number) => new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 2 }).format(value)
 const tokenFormat = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 })
-export const tokenNumber = (value: number) => tokenFormat.format(value).toLowerCase()
+export const tokenNumber = (value: number) => tokenFormat.format(value)
 export const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value)
 export const dateTime = (value: number) => new Date(value).toLocaleString("ko-KR")
 export const totalTokens = (tokens: TokenUsageInfo) => tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
@@ -31,6 +31,24 @@ export function statsQuery(from: string, to: string, project: string) {
 }
 
 export type Filters = { from: string; to: string; project: string }
+
+export function dailyStatsQueries(filters: Filters) {
+  const query = new URLSearchParams(statsQuery(filters.from, filters.to, filters.project))
+  query.set("tools", "none")
+  const end = Number(query.get("to"))
+  const day = new Date(Number(query.get("from")))
+  const queries: { date: string; query: string }[] = []
+  while (day.getTime() < end) {
+    // shortcut: Cap per-day API calls at 100; replace when OpenCode exposes daily token activity.
+    if (queries.length >= 100) throw new Error("일별 토큰은 한 번에 최대 100일까지 조회할 수 있습니다. 조회 기간을 줄여 주세요.")
+    const date = dateInput(day)
+    query.set("from", String(day.getTime()))
+    day.setDate(day.getDate() + 1)
+    query.set("to", String(day.getTime()))
+    queries.push({ date, query: query.toString() })
+  }
+  return queries
+}
 
 export function readFilters(search: string): Filters {
   const params = new URLSearchParams(search)

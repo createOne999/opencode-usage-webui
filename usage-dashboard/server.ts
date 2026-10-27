@@ -52,8 +52,10 @@ export function startDashboard(options: Options) {
         if ((parent && !/^ses_[\w-]{1,252}$/.test(parent)) || (detail?.[2] === "history" && (!selected || !/^msg_[\w-]{1,252}$/.test(selected))))
           return json({ error: "유효한 세션과 요청을 선택해 주세요." }, 400)
 
+        const tools = url.pathname === "/api/stats" ? url.searchParams.get("tools") ?? "detail" : "detail"
+        if (tools !== "none" && tools !== "summary" && tools !== "detail") return json({ error: "유효하지 않은 도구 집계 방식입니다." }, 400)
         const input: SessionStatsInput = {
-          tools: "detail",
+          tools,
           project: url.searchParams.get("project") === "all" ? undefined : url.searchParams.get("project") || options.projectID,
           timezone: url.searchParams.get("timezone") || "UTC",
         }
