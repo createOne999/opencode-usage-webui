@@ -83,7 +83,7 @@ export function DailyTokens(props: { filters: Filters }) {
     <div className="section-heading"><div><h2 className="section-title">일별 토큰 사용량</h2><p className="section-description">{props.filters.from} ~ {props.filters.to}</p></div><Button variant="outline" onClick={load} disabled={!!progress}><RefreshCw aria-hidden="true" className={progress ? "motion-safe:animate-spin" : ""} />{progress ? "일별 토큰 조회 중…" : data ? "일별 토큰 새로고침" : "일별 토큰 불러오기"}</Button></div>
     {progress && <p role="status" className="text-xs text-muted-foreground">{progress.loaded} / {progress.total}일 조회 완료</p>}
     <Notice error={error} retry={load} />
-    {data && <UsageChart title="날짜별 토큰 사용량" line tokens data={data.map((day) => ({ label: day.date, input: day.tokens.input, output: day.tokens.output, reasoning: day.tokens.reasoning, cacheRead: day.tokens.cache.read, cacheWrite: day.tokens.cache.write }))} series={[{ key: "input", name: "입력", color: colors[0]! }, { key: "output", name: "출력", color: colors[1]! }, { key: "reasoning", name: "추론", color: colors[2]! }, { key: "cacheRead", name: "캐시 읽기", color: colors[3]! }, { key: "cacheWrite", name: "캐시 쓰기", color: colors[4]! }]} />}
+    {data && <UsageChart title="날짜별 토큰 사용량" stacked tokens data={data.filter((day) => totalTokens(day.tokens) > 0).map((day) => ({ label: day.date, input: day.tokens.input, output: day.tokens.output, reasoning: day.tokens.reasoning, cacheRead: day.tokens.cache.read, cacheWrite: day.tokens.cache.write }))} series={[{ key: "input", name: "입력", color: colors[0]! }, { key: "output", name: "출력", color: colors[1]! }, { key: "reasoning", name: "추론", color: colors[2]! }, { key: "cacheRead", name: "캐시 읽기", color: colors[3]! }, { key: "cacheWrite", name: "캐시 쓰기", color: colors[4]! }]} />}
   </section>
 }
 

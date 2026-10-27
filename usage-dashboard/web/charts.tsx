@@ -8,7 +8,7 @@ type Point = { label: string; id?: string; [key: string]: string | number | null
 type Series = { key: string; name: string; color: string }
 export const colors = ["#96bbff", "#7edbb8", "#e3bb79", "#beabff", "#f29eb3"]
 
-export function UsageChart(props: { title: string; description?: string; data: Point[]; series: Series[]; line?: boolean; currency?: boolean; tokens?: boolean; selected?: string; onSelect?: (id: string) => void; table?: boolean }) {
+export function UsageChart(props: { title: string; description?: string; data: Point[]; series: Series[]; line?: boolean; stacked?: boolean; currency?: boolean; tokens?: boolean; selected?: string; onSelect?: (id: string) => void; table?: boolean }) {
   const id = useId()
   const format = props.currency ? money : props.tokens ? tokenNumber : number
   const Chart = props.line ? LineChart : BarChart
@@ -30,7 +30,7 @@ export function UsageChart(props: { title: string; description?: string; data: P
             {selected && <ReferenceLine x={selected.label} stroke="var(--foreground)" strokeDasharray="4 3" />}
             {props.series.map((series) => props.line
               ? <Line key={series.key} dataKey={series.key} name={series.name} stroke={series.color} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 6 }} isAnimationActive={false} connectNulls={false} />
-              : <Bar key={series.key} dataKey={series.key} name={series.name} fill={series.color} radius={[3, 3, 0, 0]} maxBarSize={48} isAnimationActive={false} />)}
+              : <Bar key={series.key} dataKey={series.key} name={series.name} fill={series.color} stackId={props.stacked ? "usage" : undefined} radius={props.stacked ? 0 : [3, 3, 0, 0]} maxBarSize={48} isAnimationActive={false} />)}
           </Chart>
         </ResponsiveContainer>
       </div>

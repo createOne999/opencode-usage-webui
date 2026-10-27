@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test"
+import { describe, expect, spyOn, test } from "bun:test"
+import * as React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { App } from "../web/app"
 import { DailyTokens, StatsView } from "../web/stats"
@@ -95,6 +96,29 @@ describe("usage pages", () => {
     const html = renderToStaticMarkup(<DailyTokens filters={filters} />)
     for (const text of ["일별 토큰 불러오기", "2026-10-25", "2026-10-27"]) expect(html).toContain(text)
     expect(html).not.toContain("날짜별 토큰 사용량 데이터")
+  })
+
+  test("keeps all five daily token categories and omits zero-usage dates", () => {
+    const zero = { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } }
+    const days = [zero, { ...zero, input: 1 }, { ...zero, output: 2 }, { ...zero, reasoning: 3 }, { ...zero, cache: { read: 4, write: 0 } }, { ...zero, cache: { read: 0, write: 5 } }, stats.tokens]
+      .map((tokens, index) => ({ date: `2026-10-${21 + index}`, tokens }))
+    const state = spyOn(React, "useState").mockReturnValueOnce([days, () => {}])
+    try {
+      const html = renderToStaticMarkup(<DailyTokens filters={{ from: "2026-10-20", to: "2026-10-28", project: "" }} />)
+      expect(html).not.toContain("2026-10-21")
+      for (const day of days.slice(1)) expect(html).toContain(day.date)
+      for (const label of ["입력", "출력", "추론", "캐시 읽기", "캐시 쓰기"]) expect(html).toContain(label)
+      for (const value of [100, 20, 30, 40, 10]) expect(html).toContain(`>${value}</td>`)
+    } finally { state.mockRestore() }
+  })
+
+  test("shows the empty chart state when every daily token count is zero", () => {
+    const state = spyOn(React, "useState").mockReturnValueOnce([[{ date: "2026-10-27", tokens: { input: 0, output: 0, reasoning: 0, cache: { read: 0, write: 0 } } }], () => {}])
+    try {
+      const html = renderToStaticMarkup(<DailyTokens filters={{ from: "2026-10-27", to: "2026-10-27", project: "" }} />)
+      expect(html).toContain("표시할 그래프 데이터가 없습니다.")
+      expect(html).not.toContain("날짜별 토큰 사용량 데이터")
+    } finally { state.mockRestore() }
   })
 
   test("allows more than 100 daily calls and rejects invalid periods before fetching", () => {
