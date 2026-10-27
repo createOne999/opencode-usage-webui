@@ -65,6 +65,14 @@
 .table-scroll tfoot { @apply bg-primary/8 font-semibold; }
 .table-scroll tfoot td { @apply py-4; }
 
+.nav-link { @apply shrink-0 border-b-2 border-transparent px-4 py-3 text-xs text-muted-foreground hover:text-foreground; }
+.nav-link[aria-current="page"] { @apply border-primary text-primary; }
+.chart-frame { height: 18rem; width: 100%; min-width: 0; }
+.chart-tooltip { @apply rounded-lg border bg-card px-3 py-2 text-xs text-foreground shadow-lg; }
+.record-text { @apply max-h-96 overflow-auto rounded-md border bg-background p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words; overflow-wrap: anywhere; }
+.request-link { @apply text-primary underline-offset-4 hover:underline; }
+.request-link[aria-current="true"] { @apply rounded bg-primary/15 px-2 py-1 font-semibold; }
+
 @layer components {
   .model-name { @apply block min-w-40 max-w-72 font-mono text-xs whitespace-normal break-all; }
   .section-heading { @apply mb-4 flex flex-wrap items-center justify-between gap-3; }

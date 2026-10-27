@@ -35,7 +35,8 @@ describe("read-only dashboard server", () => {
       expect(html).toContain('id="root"')
       const source = html.match(/src="([^"]+\.js)"/)?.[1]
       expect(source).toBeDefined()
-      expect((await request(server, source!)).status).toBe(200)
+      expect(source).toStartWith("/")
+      expect((await fetch(new URL(source!, new URL(path, server.url)))).status).toBe(200)
       const stylesheet = html.match(/href="([^"]+\.css)"/)?.[1]
       expect(stylesheet).toBeDefined()
       const css = await request(server, stylesheet!)

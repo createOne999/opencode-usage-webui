@@ -3,6 +3,7 @@ import tailwind from "bun-plugin-tailwind"
 const result = await Bun.build({
   entrypoints: ["./web/index.html"],
   outdir: "./dist",
+  publicPath: "/",
   minify: true,
   define: { "process.env.NODE_ENV": '"production"' },
   plugins: [tailwind],
