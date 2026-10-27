@@ -18,7 +18,7 @@ export default Plugin.define({
         return endpoint ? OpenCode.make({ baseUrl: endpoint.url, headers: Service.headers(endpoint) }) : undefined
       },
     })
-    console.info(`[usage-dashboard] ${server.url}stats · ${server.url}limits`)
+    console.info(`[usage-dashboard] ${server.url}stats · ${server.url}sessions`)
     return () => server.stop(true)
   },
 })
