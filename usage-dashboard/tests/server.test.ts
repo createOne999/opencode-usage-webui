@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test"
 import type { SessionStatsInput } from "@opencode/client"
 import { startDashboard, type DashboardClient } from "../server"
-import { limits, stats } from "./fixtures"
+import { stats } from "./fixtures"
 
 describe("read-only dashboard server", () => {
   const servers: ReturnType<typeof startDashboard>[] = []
@@ -19,14 +19,13 @@ describe("read-only dashboard server", () => {
   }
   const client: DashboardClient = {
     session: { stats: async () => stats },
-    usage: { limits: async () => ({ location: { directory: "D:/project" }, data: limits }) },
     project: { list: async () => [{ id: "current-project", canonical: "D:/project", time: { created: 1, updated: 1, active: 1 }, sandboxes: [] }] },
   }
 
-  test("serves both React pages, assets, and safe headers on loopback", async () => {
+  test("serves the usage page, assets, and safe headers on loopback", async () => {
     const server = start(client)
     expect(server.hostname).toBe("127.0.0.1")
-    for (const path of ["/stats", "/limits"]) {
+    for (const path of ["/", "/stats"]) {
       const response = await request(server, path)
       expect(response.status).toBe(200)
       expect(response.headers.get("content-security-policy")).toContain("frame-ancestors 'none'")
@@ -40,7 +39,7 @@ describe("read-only dashboard server", () => {
     expect((await request(server, "/%2e%2e%2fpackage.json")).status).toBe(404)
   })
 
-  test("forwards validated filters and unwraps usage limits", async () => {
+  test("forwards validated filters and lists projects", async () => {
     const calls: (SessionStatsInput | undefined)[] = []
     const server = start({ ...client, session: { stats: async (input) => { calls.push(input); return stats } } })
     expect(await (await request(server, "/api/stats?from=100&to=200&timezone=Asia%2FSeoul")).json()).toEqual(stats)
@@ -49,16 +48,14 @@ describe("read-only dashboard server", () => {
     expect(calls[1]?.project).toBeUndefined()
     await request(server, "/api/stats?project=other")
     expect(calls[2]?.project).toBe("other")
-    expect(await (await request(server, "/api/limits")).json()).toEqual(limits)
     const projects = await (await request(server, "/api/projects")).json()
     expect(projects).toEqual({ current: "current-project", directory: "D:/project", projects: [{ id: "current-project", canonical: "D:/project" }] })
   })
 
-  test("preserves an unconnected Console as null", async () => {
-    const server = start({ ...client, usage: { limits: async () => ({ location: { directory: "D:/project" }, data: null }) } })
-    const response = await request(server, "/api/limits")
-    expect(response.status).toBe(200)
-    expect(await response.json()).toBeNull()
+  test("returns 404 for removed limits routes without connecting upstream", async () => {
+    const server = startDashboard({ port: 0, directory: "D:/project", projectID: "current-project", connect: async () => { throw new Error("must not connect") } })
+    servers.push(server)
+    for (const path of ["/limits", "/api/limits"]) expect((await request(server, path)).status).toBe(404)
   })
 
   test("rejects invalid ranges, timezones, writes, and unknown API routes", async () => {

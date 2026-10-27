@@ -2,7 +2,6 @@ import type { OpenCodeClient, SessionStatsInput } from "@opencode/client"
 
 export type DashboardClient = {
   session: Pick<OpenCodeClient["session"], "stats">
-  usage: Pick<OpenCodeClient["usage"], "limits">
   project: Pick<OpenCodeClient["project"], "list">
 }
 
@@ -39,7 +38,7 @@ export function startDashboard(options: Options) {
       if (url.pathname.startsWith("/api/")) {
         // A custom header forces cross-origin browser requests through a denied CORS preflight.
         if (request.headers.get("x-dashboard-request") !== "1") return json({ error: "대시보드 요청 헤더가 필요합니다." }, 403)
-        if (!["/api/stats", "/api/limits", "/api/projects"].includes(url.pathname)) return json({ error: "Not found" }, 404)
+        if (!["/api/stats", "/api/projects"].includes(url.pathname)) return json({ error: "Not found" }, 404)
 
         const input: SessionStatsInput = {
           tools: "detail",
@@ -69,10 +68,6 @@ export function startDashboard(options: Options) {
           if (!client) return json({ error: "실행 중인 OpenCode V2 공유 서비스를 찾지 못했습니다. opencode mini를 실행해 주세요." }, 503)
           const requestOptions = { signal: AbortSignal.timeout(20_000) }
           if (url.pathname === "/api/stats") return json(await client.session.stats(input, requestOptions))
-          if (url.pathname === "/api/limits") {
-            const result = await client.usage.limits({ location: { directory: options.directory } }, requestOptions)
-            return json(result.data)
-          }
           const projects = await client.project.list(undefined, requestOptions)
           return json({
             directory: options.directory,
@@ -81,11 +76,11 @@ export function startDashboard(options: Options) {
           })
         } catch {
           // Never forward upstream errors: they can contain authentication or provider response details.
-          return json({ error: "OpenCode 조회에 실패했습니다. 서비스 상태와 Console 로그인을 확인한 뒤 다시 시도해 주세요." }, 502)
+          return json({ error: "OpenCode 조회에 실패했습니다. 서비스 상태를 확인한 뒤 다시 시도해 주세요." }, 502)
         }
       }
 
-      if (["/", "/stats", "/limits"].includes(url.pathname)) {
+      if (["/", "/stats"].includes(url.pathname)) {
         const file = Bun.file(new URL("./dist/index.html", import.meta.url))
         if (!(await file.exists())) return json({ error: "usage-dashboard 폴더에서 bun run build를 먼저 실행해 주세요." }, 503)
         return new Response(file, { headers })

@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import { renderToStaticMarkup } from "react-dom/server"
-import { LimitsView, StatsView } from "../web/app"
-import { budgetRows, statsQuery, totalTokens } from "../web/data"
-import { limits, stats } from "./fixtures"
+import { StatsView } from "../web/app"
+import { statsQuery, totalTokens } from "../web/data"
+import { stats } from "./fixtures"
 
 describe("usage pages", () => {
   test("renders token categories, small costs, tools and activity without hiding zeroes", () => {
@@ -14,27 +14,10 @@ describe("usage pages", () => {
     expect(empty).toContain("$0.00")
   })
 
-  test("uses each model's spend, not the budget's maximum, and does not double count pooled budgets", () => {
-    expect(budgetRows(limits).map((row) => row.remaining)).toEqual([9, 3])
-    const pooled = { ...limits, budgets: [{ ...limits.budgets[0]!, per: "set" as const, spent: 12 }] }
-    expect(budgetRows(pooled)).toHaveLength(1)
-    expect(budgetRows(pooled)[0]?.remaining).toBe(0)
-  })
-
-  test("renders Go windows, model budgets, null connections and missing allowances", () => {
-    const html = renderToStaticMarkup(<LimitsView info={limits} />)
-    for (const text of ["Test workspace", "Rolling", "주간", "월간", "25%", "한도 도달", "openai/a", "$9.00", "$3.00"]) expect(html).toContain(text)
-    expect(renderToStaticMarkup(<LimitsView info={null} />)).toContain("/connect")
-    const empty = renderToStaticMarkup(<LimitsView info={{ ...limits, go: undefined, budgets: [] }} />)
-    expect(empty).toContain("Go 구독 정보가 없습니다")
-    expect(empty).toContain("적용되는 예산 한도가 없습니다")
-  })
-
-  test("escapes provider-controlled text and rejects unsafe Console links", () => {
-    const html = renderToStaticMarkup(<LimitsView info={{ ...limits, workspace: { ...limits.workspace, name: "<script>alert(1)</script>", usageURL: "javascript:alert(1)" } }} />)
+  test("escapes provider-controlled model names", () => {
+    const html = renderToStaticMarkup(<StatsView stats={{ ...stats, models: [{ ...stats.models[0]!, model: { providerID: "openai", id: "<script>alert(1)</script>" } }] }} />)
     expect(html).toContain("&lt;script&gt;")
     expect(html).not.toContain("<script>")
-    expect(html).not.toContain("javascript:")
   })
 
   test("includes the selected end date and forwards the browser timezone", () => {

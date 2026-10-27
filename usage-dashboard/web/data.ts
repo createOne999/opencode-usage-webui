@@ -1,4 +1,4 @@
-import type { TokenUsageInfo, UsageLimitsInfo } from "@opencode/client"
+import type { TokenUsageInfo } from "@opencode/client"
 
 export type Projects = {
   directory: string
@@ -23,13 +23,4 @@ export function statsQuery(from: string, to: string, project: string) {
   if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start >= end)
     throw new Error("유효한 시작일과 종료일을 선택해 주세요.")
   return new URLSearchParams({ from: String(start.getTime()), to: String(end.getTime()), project, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }).toString()
-}
-
-export function budgetRows(info: UsageLimitsInfo) {
-  return info.budgets.flatMap((budget) => {
-    const rows = budget.per === "model" && budget.models.length > 0
-      ? budget.models.map((model) => ({ target: `${model.providerID}/${model.modelID}`, spent: model.spent ?? 0 }))
-      : [{ target: budget.coverage === "all" ? "모든 모델 · 유료 서비스" : budget.models.map((model) => `${model.providerID}/${model.modelID}`).join(", ") || "적용 모델 없음", spent: budget.spent }]
-    return rows.map((row) => ({ ...row, budget, remaining: Math.max(0, budget.limit - row.spent) }))
-  })
 }
