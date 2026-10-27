@@ -3,11 +3,26 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { App } from "../web/app"
 import { StatsView } from "../web/stats"
 import { ContextView } from "../web/sessions"
-import { pageHref, readFilters, requestHref, requestPoints, statsQuery, totalTokens } from "../web/data"
+import { number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
 import { recordedMessage, requestSummary, type HistoryPage } from "../history"
 import { messages, stats } from "./fixtures"
 
 describe("usage pages", () => {
+  test("formats only token counts with lowercase k, m, b, and t suffixes", () => {
+    for (const [value, formatted] of [[0, "0"], [999, "999"], [1_000, "1k"], [1_234, "1.23k"], [999_999, "1m"], [1_000_000, "1m"], [1_000_000_000, "1b"], [1_234_567_890_123, "1.23t"]] as const) expect(tokenNumber(value)).toBe(formatted)
+    expect(number(1_234)).toBe("1,234")
+    const tokens = { ...stats.tokens, input: 1_234_567 }
+    const overview = renderToStaticMarkup(<StatsView stats={{ ...stats, tokens, steps: 1_234 }} section="overview" />)
+    expect(overview).toContain("1.23m")
+    expect(overview).toContain("1,234")
+    const models = renderToStaticMarkup(<StatsView stats={{ ...stats, models: [{ ...stats.models[0]!, tokens }] }} section="models" />)
+    expect(models).toContain("1.23m")
+    const selected = messages.find((message) => message.id === "msg_selected")!
+    if (selected.type !== "assistant") throw new Error("bad fixture")
+    const context = renderToStaticMarkup(<ContextView data={{ request: requestSummary({ ...selected, tokens }), response: recordedMessage(selected), data: [] }} hasOlder={false} />)
+    expect(context).toContain("입력 1.23m")
+  })
+
   test("renders separate pages with shared navigation and URL-preserving filters", () => {
     const search = "?from=2026-10-01&to=2026-10-27&project=all"
     for (const [pathname, heading] of [["/stats", "사용량 개요"], ["/models", "모델별 사용량"], ["/tools", "도구 사용량"], ["/sessions", "세션 탐색"], ["/sessions/ses_example", "세션 · 요청별 컨텍스트"]]) {

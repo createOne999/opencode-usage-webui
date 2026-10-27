@@ -8,6 +8,8 @@ export type Projects = {
 }
 
 export const number = (value: number) => new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 2 }).format(value)
+const tokenFormat = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 })
+export const tokenNumber = (value: number) => tokenFormat.format(value).toLowerCase()
 export const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(value)
 export const dateTime = (value: number) => new Date(value).toLocaleString("ko-KR")
 export const totalTokens = (tokens: TokenUsageInfo) => tokens.input + tokens.output + tokens.reasoning + tokens.cache.read + tokens.cache.write
