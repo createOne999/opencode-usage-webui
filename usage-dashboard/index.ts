@@ -19,6 +19,6 @@ export default Plugin.define({
       },
     })
     console.info(`[usage-dashboard] ${server.url}stats · ${server.url}limits`)
-    return () => { server.stop(true) }
+    return () => server.stop(true)
   },
 })
