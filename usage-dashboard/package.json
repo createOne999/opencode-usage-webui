@@ -1,0 +1,26 @@
+{
+  "name": "opencode-usage-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "build": "bun build ./web/index.html --outdir ./dist --minify --define \"process.env.NODE_ENV='production'\"",
+    "test": "bun test ./tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode/client": "2.2.0",
+    "@opencode/plugin": "2.2.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "7.0.2"
+  }
+}
