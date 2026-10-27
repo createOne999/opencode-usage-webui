@@ -12,7 +12,7 @@ export function UsageChart(props: { title: string; description?: string; data: P
   const id = useId()
   const format = props.currency ? money : number
   const Chart = props.line ? LineChart : BarChart
-  const selected = props.data.find((point) => point.id === props.selected)
+  const selected = props.selected ? props.data.find((point) => point.id === props.selected) : undefined
   return <Card className="min-w-0 gap-4 p-4 sm:p-5">
     <div><h2 id={id} className="section-title">{props.title}</h2>{props.description && <p className="section-description">{props.description}</p>}</div>
     {props.data.length ? <>

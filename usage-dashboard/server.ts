@@ -95,10 +95,11 @@ export function startDashboard(options: Options) {
             if (message.type !== "assistant") return json({ error: "모델 Step을 선택해 주세요." }, 400)
             const index = page.data.findIndex((item) => item.id === selected)
             const older = url.searchParams.get("older") === "1"
-            if ((!older && index < 0) || (older && (!cursor || index >= 0 || page.data.some((item) => item.time.created > message.time.created))))
+            if ((!older && index < 0) || (older && (!cursor || index >= 0 || (page.data.length > 0 && page.data.every((item) => item.time.created > message.time.created)))))
               return json({ error: "요청 위치가 바뀌었거나 이력 커서가 맞지 않습니다. 요청 목록을 새로고침한 뒤 다시 선택해 주세요." }, 409)
             const prior = older ? page.data : page.data.slice(index + 1)
-            return json({ request: requestSummary(message), response: recordedMessage(message), data: prior.toReversed().map((item) => recordedMessage(item, message.time.created)), next: page.cursor.next })
+            // A steered prompt can be committed before the delayed Step.Started event but after dispatch.
+            return json({ request: requestSummary(message), response: recordedMessage(message), data: prior.toReversed().filter((item) => item.time.created <= message.time.created).map((item) => recordedMessage(item, message.time.created)), next: page.cursor.next })
           }
           const projects = await client.project.list(undefined, requestOptions)
           return json({

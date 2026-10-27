@@ -89,7 +89,7 @@ export function historyWindow(messages: RecordedMessage[], model: ModelRef) {
     archived: boundary < 0 ? [] : messages.slice(0, boundary),
     kept: keep >= 0 && keep < boundary ? messages.slice(keep, boundary) : [],
     recent: checkpoint?.recent,
-    missingKept: !!checkpoint?.keepID && keep < 0 && !checkpoint.recent,
+    missingKept: !!checkpoint?.keepID && (keep < 0 || keep >= boundary) && !checkpoint.recent,
     native: !!checkpoint?.native,
     skippedNative: messages.some((message, index) => index > boundary && message.checkpoint?.native),
   }

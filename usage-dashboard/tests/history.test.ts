@@ -14,6 +14,7 @@ describe("recorded request context", () => {
     expect(window.archived).toHaveLength(2)
     expect(window.missingKept).toBe(false)
     expect(historyWindow(records.slice(2), model).missingKept).toBe(true)
+    expect(historyWindow(records.map((message) => message.checkpoint ? { ...message, checkpoint: { ...message.checkpoint, keepID: "msg_checkpoint" } } : message), model).missingKept).toBe(true)
     expect(historyWindow(records.slice(0, 2), model).active).toHaveLength(2)
   })
 
@@ -29,6 +30,8 @@ describe("recorded request context", () => {
   test("does not expose later-settled assistant or shell output as historical input", () => {
     const assistant = messages[1] as SessionMessageAssistant
     expect(recordedMessage({ ...assistant, time: { created: 200, completed: 600 } }, 500).blocks).toEqual([{ label: "복원 제한", text: "이 응답은 선택한 요청 전에 완료된 것으로 확인되지 않아 본문을 제외했습니다." }])
+    const lateTool = { ...assistant, content: assistant.content.map((part) => part.type === "tool" ? { ...part, time: { ...part.time, completed: 600 } } : part) }
+    expect(JSON.stringify(recordedMessage(lateTool, 500))).not.toContain("저장된 도구 결과")
     const shell: SessionMessageInfo = { id: "msg_shell", type: "shell", time: { created: 100, completed: 600 }, shellID: "sh_test", command: "echo later", status: "exited", output: { output: "later secret", cursor: 12, size: 12, truncated: false } }
     expect(JSON.stringify(recordedMessage(shell, 500))).not.toContain("later secret")
     expect(JSON.stringify(recordedMessage(shell, 700))).toContain("later secret")

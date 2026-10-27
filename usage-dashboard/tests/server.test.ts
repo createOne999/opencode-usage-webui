@@ -145,6 +145,19 @@ describe("read-only dashboard server", () => {
     expect((await request(server, "/api/sessions/ses_example/history?request=msg_selected&cursor=wrong&older=1")).status).toBe(409)
   })
 
+  test("excludes steered input recorded after dispatch even before the assistant projection", async () => {
+    const late = { id: "msg_steered", type: "user" as const, time: { created: 550 }, text: "not in the dispatched request" }
+    const ordered = [...messages.slice(0, 4), late, ...messages.slice(4)]
+    const server = start({ ...client, message: { list: async () => ({ data: ordered.toReversed(), cursor: {} }) } })
+    const page = await (await request(server, "/api/sessions/ses_example/history?request=msg_selected")).json()
+    expect(page.data.map((message: { id: string }) => message.id)).not.toContain(late.id)
+    expect(page.data.at(-1).id).toBe("msg_instructions")
+    const paged = start({ ...client, message: { list: async () => ({ data: [late, messages[0]!], cursor: {} }) } })
+    const response = await request(paged, "/api/sessions/ses_example/history?request=msg_selected&cursor=older&older=1")
+    expect(response.status).toBe(200)
+    expect((await response.json()).data.map((message: { id: string }) => message.id)).toEqual(["msg_user"])
+  })
+
   test("validates all new read boundaries and blocks writes and cross-origin reads", async () => {
     const server = start(client)
     for (const path of ["/api/sessions?parent=invalid", "/api/sessions?search=" + "a".repeat(257), "/api/sessions?cursor=" + "a".repeat(8193), "/api/sessions/ses_example/history", "/api/sessions/ses_example/history?request=invalid"])
