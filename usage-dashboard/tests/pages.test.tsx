@@ -1,10 +1,17 @@
 import { describe, expect, test } from "bun:test"
 import { renderToStaticMarkup } from "react-dom/server"
-import { StatsView } from "../web/app"
+import { App, StatsView } from "../web/app"
 import { statsQuery, totalTokens } from "../web/data"
 import { stats } from "./fixtures"
 
 describe("usage pages", () => {
+  test("renders one read-only board with labeled native filters and loading placeholders", () => {
+    const html = renderToStaticMarkup(<App />)
+    for (const value of ['href="#main"', 'type="date"', "시작일", "종료일", "프로젝트", 'role="status"', 'data-slot="skeleton"', "LOCAL · READ ONLY"]) expect(html).toContain(value)
+    expect(html).not.toContain("<nav")
+    expect(html).not.toContain("/limits")
+  })
+
   test("renders token categories, small costs, tools and activity without hiding zeroes", () => {
     expect(totalTokens(stats.tokens)).toBe(200)
     const html = renderToStaticMarkup(<StatsView stats={stats} />)
@@ -12,6 +19,9 @@ describe("usage pages", () => {
     const empty = renderToStaticMarkup(<StatsView stats={{ ...stats, models: [], activity: [], cost: 0, tools: { mode: "none" } }} />)
     expect(empty).toContain("모델 사용 기록이 없습니다")
     expect(empty).toContain("$0.00")
+    expect(empty).toContain("도구 상세 사용 기록이 없습니다")
+    expect(html).toMatch(/<th[^>]*class="[^"]*text-right[^"]*"[^>]*>Steps<\/th>/)
+    expect(html).toContain('role="region" aria-label="모델별 사용량"')
   })
 
   test("escapes provider-controlled model names", () => {

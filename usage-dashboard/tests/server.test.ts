@@ -29,11 +29,19 @@ describe("read-only dashboard server", () => {
       const response = await request(server, path)
       expect(response.status).toBe(200)
       expect(response.headers.get("content-security-policy")).toContain("frame-ancestors 'none'")
+      expect(response.headers.get("content-security-policy")).toContain("style-src 'self'")
       const html = await response.text()
       expect(html).toContain('id="root"')
       const source = html.match(/src="([^"]+\.js)"/)?.[1]
       expect(source).toBeDefined()
       expect((await request(server, source!)).status).toBe(200)
+      const stylesheet = html.match(/href="([^"]+\.css)"/)?.[1]
+      expect(stylesheet).toBeDefined()
+      const css = await request(server, stylesheet!)
+      expect(css.status).toBe(200)
+      expect(css.headers.get("content-type")).toContain("text/css")
+      expect(await css.text()).toContain("prefers-reduced-motion")
+      expect(html).not.toContain("<style")
     }
     expect((await request(server, "/server.ts")).status).toBe(404)
     expect((await request(server, "/%2e%2e%2fpackage.json")).status).toBe(404)

@@ -50,6 +50,13 @@ opencode mini
 - 자동 폴링 대신 조회/새로고침 시에만 API를 호출합니다. 데이터가 없거나 연결에 실패하면 화면에서 안내합니다.
 - 제거하려면 루트 `opencode.json`에서 이 플러그인 항목을 지우세요. 이 플러그인이 저장한 사용량 데이터는 없습니다.
 
+## 디자인
+
+- Tailwind CSS v4와 shadcn/ui(Radix 기반), Lucide React를 사용한 단일 다크 화면입니다. 사이드바 없이 필터·요약 카드·모델/도구 표에 집중합니다.
+- `web/components/ui/`는 shadcn/ui 소스입니다. `components.json`으로 필요한 컴포넌트만 추가하며, 날짜와 프로젝트 선택은 네이티브 입력 동작을 유지합니다.
+- `build.ts`가 Bun의 Tailwind 플러그인으로 HTML·JS·CSS를 빌드합니다. CSS는 별도 로컬 파일로 제공하여 기존 CSP를 유지합니다.
+- 전환은 짧은 CSS 효과만 사용하며 `prefers-reduced-motion`을 존중합니다. Motion·React Aria·reactbits·차트 라이브러리는 추가하지 않습니다.
+
 ## 검증
 
 ```powershell
@@ -59,3 +66,5 @@ bun run --cwd usage-dashboard test
 ```
 
 테스트는 가상 API 응답을 사용하며 실제 계정이나 세션을 수정하지 않습니다. API 필터·보안 경계·오류 처리·리스너 정리, 토큰 합산·페이지 렌더링을 검증합니다. 한도 기능은 제거했으며 `/limits`와 `/api/limits`는 404를 반환합니다.
+
+디자인 변경은 Chromium에서 390/768/1440px, 날짜·프로젝트 필터, 비용 정렬, 새로고침, 표의 키보드 가로 스크롤, 동작 줄이기를 확인했습니다. 별도 가상 API 서버와 브라우저 응답 대체로 로딩·빈 기록·조회/프로젝트 오류의 재시도 복구·긴 모델명을 검증했으며 CSP 위반은 없었습니다.
