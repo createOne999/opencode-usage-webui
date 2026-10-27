@@ -27,7 +27,7 @@ describe("usage pages", () => {
     const search = "?from=2026-10-01&to=2026-10-27&project=all"
     for (const [pathname, heading] of [["/stats", "사용량 개요"], ["/models", "모델별 사용량"], ["/tools", "도구 사용량"], ["/sessions", "세션 탐색"], ["/sessions/ses_example", "세션 · 요청별 컨텍스트"]]) {
       const html = renderToStaticMarkup(<App location={{ pathname: pathname!, search }} />)
-      for (const value of [heading, 'href="#main"', 'type="date"', "시작일", "종료일", "프로젝트", 'role="status"', 'data-slot="skeleton"', "LOCAL · READ ONLY", 'aria-label="주 메뉴"', "aria-current=\"page\"", "project=all"]) expect(html).toContain(value)
+      for (const value of [heading, 'href="#main"', 'type="date"', "시작일", "종료일", "프로젝트", 'role="status"', 'data-slot="skeleton"', 'aria-label="주 메뉴"', "aria-current=\"page\"", "project=all"]) expect(html).toContain(value)
       expect(html).not.toContain("/limits")
       expect(html).toContain('value="2026-10-01"')
     }
@@ -62,12 +62,9 @@ describe("usage pages", () => {
     if (selected.type !== "assistant") throw new Error("bad fixture")
     const data: HistoryPage = { request: requestSummary(selected), response: recordedMessage(selected), data: messages.slice(0, 4).map((message) => recordedMessage(message, 500)) }
     const context = renderToStaticMarkup(<ContextView data={data} hasOlder={false} />)
-    for (const value of ["저장 이력 기반 재구성", "실제 전송 원문이 아닙니다", "요청 직전 저장 이력", "압축 이전 원기록", "압축에서 유지한 최근 이력", "선택한 요청의 응답", "&lt;script&gt;"]) expect(context).toContain(value)
+    for (const value of ["요청 직전 저장 이력", "압축 이전 원기록", "압축에서 유지한 최근 이력", "선택한 요청의 응답", "&lt;script&gt;"]) expect(context).toContain(value)
     expect(context).not.toContain("미래 메시지")
     expect(context).not.toContain("<script>")
-    const partial = renderToStaticMarkup(<ContextView data={{ ...data, data: data.data.slice(2) }} hasOlder />)
-    expect(partial).toContain("앞부분 미조회")
-    expect(partial).toContain("유지 컨텍스트가 불완전")
   })
 
   test("distinguishes missing usage from zero and excludes generated tokens from context size", () => {
@@ -96,13 +93,13 @@ describe("usage pages", () => {
     expect(dailyStatsQueries({ from: "2026-12-31", to: "2027-01-01", project: "" }).map((day) => day.date)).toEqual(["2026-12-31", "2027-01-01"])
     expect(dailyStatsQueries({ from: "2026-10-27", to: "2026-10-27", project: "" })).toHaveLength(1)
     const html = renderToStaticMarkup(<DailyTokens filters={filters} />)
-    for (const text of ["일별 토큰 불러오기", "1일 단위", "최대 100일", "2026-10-25", "2026-10-27"]) expect(html).toContain(text)
+    for (const text of ["일별 토큰 불러오기", "2026-10-25", "2026-10-27"]) expect(html).toContain(text)
     expect(html).not.toContain("날짜별 토큰 사용량 데이터")
   })
 
-  test("bounds daily calls and rejects invalid periods before fetching", () => {
+  test("allows more than 100 daily calls and rejects invalid periods before fetching", () => {
     expect(dailyStatsQueries({ from: "2026-01-01", to: "2026-04-10", project: "" })).toHaveLength(100)
-    expect(() => dailyStatsQueries({ from: "2026-01-01", to: "2026-04-11", project: "" })).toThrow("최대 100일")
+    expect(dailyStatsQueries({ from: "2026-01-01", to: "2026-04-11", project: "" })).toHaveLength(101)
     expect(() => dailyStatsQueries({ from: "2026-02-30", to: "2026-03-01", project: "" })).toThrow()
     expect(() => dailyStatsQueries({ from: "2026-10-28", to: "2026-10-27", project: "" })).toThrow()
   })

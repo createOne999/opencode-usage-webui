@@ -25,7 +25,7 @@ function FiltersForm(props: { filters: Filters; action: string; projects?: Proje
     <label className="field-label">종료일<Input name="to" className="h-10 min-w-0 text-foreground" type="date" required min={filters.from} value={filters.to} onChange={(event) => setFilters({ ...filters, to: event.target.value })} /></label>
     <label className="field-label [&>[data-slot=native-select-wrapper]]:w-full">프로젝트<NativeSelect name="project" className="h-10 text-foreground" value={filters.project} onChange={(event) => setFilters({ ...filters, project: event.target.value })}><option value="">현재 프로젝트</option><option value="all">전체 프로젝트</option>{props.projects?.projects.filter((project) => project.id !== props.projects?.current).map((project) => <option key={project.id} value={project.id}>{project.name || project.canonical}</option>)}</NativeSelect></label>
     <Button className="h-10" type="submit"><RefreshCw aria-hidden="true" />조회 / 새로고침</Button>
-  </form></Card>{error && <div className="mt-3"><Notice error={error} /></div>}{props.projects && <p className="mt-3 flex items-start gap-2 px-1 text-xs leading-relaxed text-muted-foreground"><FolderOpen aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" /><span className="min-w-0 break-all">현재 위치: {props.projects.directory}</span></p>}</div>
+  </form></Card>{error && <div className="mt-3"><Notice error={error} /></div>}</div>
 }
 
 export function App(props: { location?: { pathname: string; search: string } }) {
@@ -39,15 +39,15 @@ export function App(props: { location?: { pathname: string; search: string } }) 
   const title = detail ? "세션 · 요청별 컨텍스트" : sessions ? "세션 탐색" : section === "models" ? "모델별 사용량" : section === "tools" ? "도구 사용량" : "사용량 개요"
   return <>
     <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">본문으로 이동</a>
-    <div className="border-b bg-card/60"><div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8"><a className="flex items-center gap-2.5 font-semibold tracking-tight" href={pageHref("/stats", filters)}><span className="flex size-8 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ChartNoAxesCombined aria-hidden="true" className="size-4" /></span>OpenCode <span className="font-normal text-muted-foreground">/ usage</span></a><Badge variant="outline" className="gap-1.5 text-[10px] text-muted-foreground"><LockKeyhole aria-hidden="true" />LOCAL · READ ONLY</Badge></div>
+    <div className="border-b bg-card/60"><div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8"><a className="flex items-center gap-2.5 font-semibold tracking-tight" href={pageHref("/stats", filters)}><span className="flex size-8 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ChartNoAxesCombined aria-hidden="true" className="size-4" /></span>OpenCode <span className="font-normal text-muted-foreground">/ usage</span></a></div>
       <nav aria-label="주 메뉴" className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-4 sm:px-8">{[["/stats", "개요"], ["/models", "모델"], ["/tools", "도구"], ["/sessions", "세션 / 요청"]].map(([path, label]) => <a key={path} href={pageHref(path!, filters)} aria-current={(sessions ? path === "/sessions" : path === location.pathname || (path === "/stats" && location.pathname === "/")) ? "page" : undefined} className="nav-link">{label}</a>)}</nav>
     </div>
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-8 sm:py-10">
-      <header className="mb-7"><p className="mb-3 font-mono text-[10px] font-medium tracking-[0.2em] text-primary">WORKSPACE ANALYTICS</p><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{sessions ? "저장된 모델 Steps를 선택해 해당 요청 직전의 기록을 살펴봅니다." : "OpenCode에 저장된 토큰, 비용, 모델 및 도구 사용 기록"}</p></header>
+      <header className="mb-7"><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1></header>
       <FiltersForm filters={filters} action={location.pathname === "/" ? "/stats" : location.pathname} projects={projects.data} />
       {projects.error && <div className="mb-5"><Notice error={`프로젝트 목록: ${projects.error}`} retry={projects.reload} /></div>}
       {detail ? <SessionDetail sessionID={detail[1]!} filters={filters} params={params} /> : sessions ? <SessionsPage filters={filters} params={params} /> : <StatsPage filters={filters} section={section} />}
-      <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t pt-5 text-xs leading-relaxed text-muted-foreground"><span>OpenCode V2 · Experimental API · 모든 비용은 USD입니다.</span><span>공개 읽기 API · 별도 수집·저장 없음</span></footer>
+      <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t pt-5 text-xs leading-relaxed text-muted-foreground"><span>OpenCode V2 · Experimental API</span></footer>
     </main>
   </>
 }

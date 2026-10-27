@@ -39,8 +39,6 @@ export function dailyStatsQueries(filters: Filters) {
   const day = new Date(Number(query.get("from")))
   const queries: { date: string; query: string }[] = []
   while (day.getTime() < end) {
-    // shortcut: Cap per-day API calls at 100; replace when OpenCode exposes daily token activity.
-    if (queries.length >= 100) throw new Error("일별 토큰은 한 번에 최대 100일까지 조회할 수 있습니다. 조회 기간을 줄여 주세요.")
     const date = dateInput(day)
     query.set("from", String(day.getTime()))
     day.setDate(day.getDate() + 1)

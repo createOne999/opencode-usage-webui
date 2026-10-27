@@ -35,7 +35,6 @@ export function UsageChart(props: { title: string; description?: string; data: P
         </ResponsiveContainer>
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">{props.series.map((series) => <span key={series.key} className="flex items-center gap-2"><svg aria-hidden="true" width="10" height="10"><rect width="10" height="10" rx="2" fill={series.color} /></svg>{series.name}</span>)}</div>
-      <p className="footnote">{props.onSelect ? "점을 클릭하거나 아래 요청 링크로 같은 시점을 선택하세요." : "방향키로 데이터 탐색"}</p>
       {props.table !== false && <details><summary className="text-xs text-primary">그래프 데이터 표</summary><div className="mt-3"><Board title={`${props.title} 데이터`} headers={["항목", ...props.series.map((series) => series.name)]} rows={props.data.map((point) => [point.label, ...props.series.map((series) => point[series.key] == null ? "미집계" : format(Number(point[series.key])))])} /></div></details>}
     </> : <p className="py-12 text-center text-sm text-muted-foreground">표시할 그래프 데이터가 없습니다.</p>}
   </Card>
