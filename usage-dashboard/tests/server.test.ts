@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, test } from "bun:test"
+import { afterEach, describe, expect, spyOn, test } from "bun:test"
 import type { SessionStatsInput } from "@opencode/client"
 import { startDashboard, type DashboardClient } from "../server"
 import { messages, session, stats } from "./fixtures"
 
 describe("read-only dashboard server", () => {
   const servers: ReturnType<typeof startDashboard>[] = []
-  afterEach(() => { servers.splice(0).forEach((server) => server.stop(true)) })
+  afterEach(async () => { await Promise.all(servers.splice(0).map((server) => server.stop(true))) })
   function start(client?: DashboardClient, projectID = "current-project") {
     const server = startDashboard({
       port: 0, directory: "D:/project", projectID,
@@ -95,6 +95,51 @@ describe("read-only dashboard server", () => {
     expect((await request(server, "/api/stats", { method: "OPTIONS", headers: { origin: "https://evil.example" } })).status).toBe(403)
   })
 
+  test("serves IPv4, localhost, and IPv6 on the same actual ephemeral port", async () => {
+    const server = start(client)
+    expect(server.url).toBeInstanceOf(URL)
+    expect(server.port).toBeGreaterThan(0)
+    expect(server.url.port).toBe(String(server.port))
+    expect(server.hostname).toBe("127.0.0.1")
+    for (const host of ["127.0.0.1", "localhost", "[::1]"]) {
+      const origin = `http://${host}:${server.port}`
+      const response = await fetch(`${origin}/api/stats`, { headers: { origin, "x-dashboard-request": "1" } })
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual(stats)
+      expect(response.headers.get("access-control-allow-origin")).toBeNull()
+    }
+  })
+
+  test("requires exact same-authority origins for every alias before connecting upstream", async () => {
+    let connections = 0
+    const server = startDashboard({ port: 0, directory: "D:/project", projectID: "current-project", connect: async () => { connections++; return client } })
+    servers.push(server)
+    const authorities = ["127.0.0.1", "localhost", "[::1]"].map((host) => `${host}:${server.port}`)
+    const otherPort = server.port === 65535 ? 65534 : server.port! + 1
+    const denied = async (headers: Record<string, string>, method = "GET", status = 403) => {
+      const before = connections
+      const response = await request(server, "/api/stats", { headers, method })
+      expect(response.status).toBe(status)
+      expect(response.headers.get("access-control-allow-origin")).toBeNull()
+      expect(response.headers.get("access-control-allow-methods")).toBeNull()
+      expect(connections).toBe(before)
+    }
+    for (const host of authorities) {
+      expect((await request(server, "/api/stats", { headers: { host } })).status).toBe(200)
+      expect((await request(server, "/api/stats", { headers: { host, origin: `http://${host}` } })).status).toBe(200)
+      for (const origin of [...authorities.filter((other) => other !== host).map((other) => `http://${other}`), `https://${host}`, `http://${host.replace(/:\d+$/, `:${otherPort}`)}`, "null", ""]) {
+        await denied({ host, origin })
+      }
+      await denied({ host, "sec-fetch-site": "cross-site" })
+      await denied({ host, "x-dashboard-request": "" })
+      for (const method of ["POST", "OPTIONS", "HEAD"]) await denied({ host, origin: `http://${host}` }, method, 405)
+    }
+    for (const host of ["evil.example", `localhost:${otherPort}`, `127.0.0.1:${otherPort}`, `[::1]:${otherPort}`, "localhost", `localhost.evil.example:${server.port}`, `127.0.0.2:${server.port}`, `[::ffff:127.0.0.1]:${server.port}`, `LOCALHOST:${server.port}`, `localhost.:${server.port}`]) {
+      await denied({ host, origin: `http://${host}` })
+    }
+    expect(connections).toBe(6)
+  })
+
   test("reports unavailable services and never exposes upstream secrets", async () => {
     expect((await request(start(), "/api/stats")).status).toBe(503)
     const server = start({ ...client, session: { ...client.session, stats: async () => { throw new Error("Bearer secret-token") } } })
@@ -103,12 +148,48 @@ describe("read-only dashboard server", () => {
     expect(await response.text()).not.toContain("secret-token")
   })
 
-  test("cleanup releases the listener", async () => {
+  test("cleanup releases both loopback listeners", async () => {
     const server = start(client)
     const port = server.port!
-    await server.stop(true)
-    const replacement = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("ok") })
-    try { expect(replacement.port).toBe(port) } finally { await replacement.stop(true) }
+    await server.stop()
+    for (const hostname of ["127.0.0.1", "::1"]) {
+      const replacement = Bun.serve({ hostname, port, fetch: () => new Response("ok") })
+      try { expect(replacement.port).toBe(port) } finally { await replacement.stop(true) }
+    }
+  })
+
+  test("an actual IPv6 port conflict fails startup and releases the IPv4 listener", async () => {
+    const occupied = Bun.serve({ hostname: "::1", port: 0, fetch: () => new Response("occupied") })
+    try {
+      expect(() => startDashboard({ port: occupied.port!, directory: "D:/project", projectID: "current-project", connect: async () => client })).toThrow()
+      const replacement = Bun.serve({ hostname: "127.0.0.1", port: occupied.port, fetch: () => new Response("released") })
+      try { expect(replacement.port).toBe(occupied.port) } finally { await replacement.stop(true) }
+      expect(await (await fetch(occupied.url)).text()).toBe("occupied")
+    } finally { await occupied.stop(true) }
+  })
+
+  test("only explicit unsupported or unavailable IPv6 errors retain IPv4", async () => {
+    const serve = Bun.serve
+    for (const code of ["EAFNOSUPPORT", "EPROTONOSUPPORT", "EADDRNOTAVAIL", "EADDRINUSE", "EACCES", "EUNKNOWN"]) {
+      const error = Object.assign(new Error("IPv6 listen failed"), { code })
+      const listener = spyOn(Bun, "serve").mockImplementationOnce(serve).mockImplementationOnce(() => { throw error })
+      try {
+        if (["EAFNOSUPPORT", "EPROTONOSUPPORT", "EADDRNOTAVAIL"].includes(code)) {
+          const server = start(client)
+          expect(listener.mock.calls[1]![0].port).toBe(server.port)
+          expect((await request(server, "/api/stats")).status).toBe(200)
+          await server.stop(true)
+        } else {
+          expect(() => start(client)).toThrow(error)
+        }
+        expect(listener.mock.calls.map(([options]) => options.hostname)).toEqual(["127.0.0.1", "::1"])
+        const port = listener.mock.calls[1]![0].port as number
+        expect(port).toBeGreaterThan(0)
+        listener.mockRestore()
+        const replacement = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("released") })
+        try { expect(replacement.port).toBe(port) } finally { await replacement.stop(true) }
+      } finally { listener.mockRestore() }
+    }
   })
 
   test("lists bounded session and timeline pages without conversation bodies or metadata", async () => {

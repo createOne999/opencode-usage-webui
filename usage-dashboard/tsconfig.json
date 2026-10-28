@@ -10,5 +10,5 @@
     "skipLibCheck": true,
     "types": ["bun"]
   },
-  "include": ["build.ts", "index.ts", "server.ts", "web/**/*.ts", "web/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"]
+  "include": ["*.ts", "web/**/*.ts", "web/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx"]
 }

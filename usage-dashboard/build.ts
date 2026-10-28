@@ -10,3 +10,6 @@ const result = await Bun.build({
 })
 
 if (!result.success) throw new AggregateError(result.logs, "Dashboard build failed")
+
+console.info("Dashboard ready. From the repository root: opencode mini → /usage-dashboard")
+console.info("접속 주소와 상태 / URL and status: bun run --cwd usage-dashboard status")

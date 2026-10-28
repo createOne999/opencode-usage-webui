@@ -7,7 +7,9 @@
     ".": "./index.ts"
   },
   "scripts": {
+    "setup": "bun install && bun run build",
     "build": "bun run build.ts",
+    "status": "bun run status.ts",
     "test": "bun test ./tests",
     "typecheck": "tsc --noEmit"
   },

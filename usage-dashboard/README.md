@@ -4,22 +4,34 @@
 
 A React + Bun web UI provided by the OpenCode V2 server plugin **in the same process**. It reads only the public API, with no separate database, collector, or always-on daemon.
 
-- **Overview:** <http://127.0.0.1:7331/stats> — summary, Steps and tokens by date, token breakdown
-- **Models:** <http://127.0.0.1:7331/models> — token/cost charts and table by model and variant
-- **Tools:** <http://127.0.0.1:7331/tools> — call status chart and execution-time table
-- **Sessions:** <http://127.0.0.1:7331/sessions> — title search, parent/child sessions, per-request context
+Run **`/usage-dashboard` in OpenCode Mini or the full TUI** to open the dashboard. The command appears in `/` autocomplete and does not call a model. It opens a browser only when requested, not when the plugin loads.
+
+- **Overview:** summary, Steps and tokens by date, token breakdown
+- **Models:** token/cost charts and table by model and variant
+- **Tools:** call status chart and execution-time table
+- **Sessions:** title search, parent/child sessions, per-request context
 
 ## Run
 
 Implemented for OpenCode **2.2.0** and Bun **1.4.2**. From the repository root:
 
 ```powershell
-bun install --cwd usage-dashboard
-bun run --cwd usage-dashboard build
+bun run --cwd usage-dashboard setup
 opencode mini
+# In OpenCode: /usage-dashboard
 ```
 
 The root `opencode.json` loads the `./usage-dashboard` directory as a plugin. It does not change global configuration. Configuration changes are applied automatically, so an already-running OpenCode does not need a service restart. If they do not take effect, use `/reload` or run Mini again from the project root.
+
+To print the actual URL and readiness in your terminal, including when the browser cannot be opened:
+
+```powershell
+bun run --cwd usage-dashboard status
+```
+
+This command discovers an already-running shared service and uses OpenCode's authenticated plugin RPC; it never starts or restarts the service. Run Mini from this repository root first. Readiness checks the listener and build; data-query errors are still reported by the dashboard. Build, port, and service failures include a suggested next action. Browser opening happens on the server's PC and may be unavailable in headless, remote, or WSL environments; use the printed URL instead.
+
+For manual access, the default is <http://127.0.0.1:7331/stats>. `http://localhost:7331/stats` and, when IPv6 is available, `http://[::1]:7331/stats` also work. The same base URL has `/models`, `/tools`, and `/sessions` pages. Use `status` rather than assuming port 7331 after changing the plugin option; `port: 0` selects an available port.
 
 After changing the frontend, run `build` again; changes take effect on the next browser refresh. After changing plugin server code, reload the plugin with `/reload`. The listener is closed when the plugin is unloaded or reloaded.
 
@@ -72,7 +84,8 @@ If port 7331 is already in use, change only the plugin option:
 
 - Finds an **already-running local shared service** using the official `Service.discover()`. It does not start, stop, or replace the service. `--standalone` and remote `--server` connections are not supported by this version.
 - The browser accesses only Bun's restricted query API. OpenCode authentication headers and passwords remain in server memory and are not sent to the browser or stored in files.
-- Binds only to `127.0.0.1` and validates Host/Origin/Fetch Metadata and custom request headers. It does not enable CORS and rejects all write requests. It does not provide isolation between local OS users or login for a publicly exposed service.
+- Binds only to loopback (`127.0.0.1` and, when available, `::1`). Only the actual port's loopback authorities, including `localhost`, are accepted, and a supplied Origin must match the request's own authority exactly. Host/Origin/Fetch Metadata and custom request headers are validated; CORS and all write requests remain blocked. LAN/machine IP access, isolation between local OS users, and login for a publicly exposed service are not provided.
+- The slash command and status RPC use OpenCode's existing command/authentication path. The separate dashboard listener does **not** inherit `opencode serve` authentication and remains local-only. No password is copied into URLs or browser settings, and no extra CORS origins are enabled.
 - React, CSS, and charts are served from local build output; no CDN, external fonts, or telemetry are used. Only saved conversation and tool results needed for display are queried when a request is selected. Bodies are not sent in lists, and queried content is not additionally stored in logs, files, or a browser database.
 - The usage API is experimental. The dashboard does not read the database directly or import OpenCode internals.
 - This is a minimal setup for one instance in one project. To enable the plugin simultaneously in other projects, specify different ports.
@@ -97,5 +110,7 @@ bun run --cwd usage-dashboard test
 ```
 
 Tests use mocked API responses and do not modify real accounts or sessions. They cover API filters, security boundaries, error handling and listener cleanup; asset loading at nested URLs; token aggregation; page separation; URL preservation; HTML escaping; excluding messages after selection; response separation; cursor pagination; compatible compaction boundaries; missing retained history; and excluding late-completing output. The limits feature was removed; `/limits` and `/api/limits` return 404.
+
+Entrypoint tests also cover command/RPC registration, actual-port reporting, build/port failures, cleanup after registration failure, and browser-open failure reporting without launching a real browser. Loopback tests exercise localhost/IPv6 access, exact-origin rejection across aliases, and cleanup of both listeners.
 
 With Chromium and a mocked API, five screens at 390/768/1440px were checked, along with clicking the request chart and moving to the selected point, loading more earlier history, response separation and excluding future messages, restoring a request link with a cursor after refresh, arrow-key tooltips, empty model/tool/session states, and recovery by retry after query errors. Charts work without relaxing the CSP. Normal responses from the session, request, and history read proxies were also confirmed against a running OpenCode 2.2.0. No service start/restart or direct database access was performed.

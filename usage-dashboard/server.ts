@@ -18,11 +18,7 @@ export function startDashboard(options: Options) {
   if (!Number.isInteger(options.port) || options.port < 0 || options.port > 65535)
     throw new Error("Dashboard port must be an integer between 0 and 65535")
 
-  const server = Bun.serve({
-    hostname: "127.0.0.1",
-    port: options.port,
-    idleTimeout: 30,
-    async fetch(request) {
+  const fetch = async (request: Request) => {
       const url = new URL(request.url)
       const origin = request.headers.get("origin")
       const headers = {
@@ -34,7 +30,8 @@ export function startDashboard(options: Options) {
       const json = (value: unknown, status = 200) => Response.json(value, { status, headers })
       const fail = (status: number, code: string, error: string) => json({ error, code }, status)
 
-      if (request.headers.get("host") !== server.url.host || (origin && origin !== server.url.origin) || request.headers.get("sec-fetch-site") === "cross-site")
+      const authority = request.headers.get("host")
+      if (!authorities.includes(authority ?? "") || (origin !== null && origin !== `http://${authority}`) || request.headers.get("sec-fetch-site") === "cross-site")
         return fail(403, "localOnly", "이 대시보드는 로컬 동일 출처에서만 접근할 수 있습니다.")
       if (request.method !== "GET") return fail(405, "readOnly", "읽기 전용 API입니다.")
 
@@ -127,7 +124,25 @@ export function startDashboard(options: Options) {
       }
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 204, headers })
       return fail(404, "notFound", "Not found")
+  }
+  const server = Bun.serve({ hostname: "127.0.0.1", port: options.port, idleTimeout: 30, fetch })
+  const authorities = ["127.0.0.1", "localhost", "[::1]"].map((host) => new URL(`http://${host}:${server.port}`).host)
+  let ipv6: typeof server | undefined
+  try {
+    ipv6 = Bun.serve({ hostname: "::1", port: server.port, idleTimeout: 30, fetch })
+  } catch (error) {
+    // Only explicit unsupported/unavailable IPv6 errors allow an IPv4-only listener.
+    if (!(error instanceof Error && "code" in error && ["EAFNOSUPPORT", "EPROTONOSUPPORT", "EADDRNOTAVAIL"].includes(String(error.code)))) {
+      void server.stop(true)
+      throw error
+    }
+  }
+  return {
+    url: server.url,
+    port: server.port,
+    hostname: server.hostname,
+    async stop(force?: boolean) {
+      await Promise.all([server.stop(force), ipv6?.stop(force)])
     },
-  })
-  return server
+  }
 }
