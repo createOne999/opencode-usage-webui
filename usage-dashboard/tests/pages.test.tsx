@@ -1,14 +1,116 @@
 import { describe, expect, spyOn, test } from "bun:test"
+import { fileURLToPath } from "node:url"
 import * as React from "react"
-import { renderToStaticMarkup } from "react-dom/server"
+import { renderToStaticMarkup as renderMarkup } from "react-dom/server"
+import { I18nextProvider } from "react-i18next"
 import { App } from "../web/app"
 import { DailyTokens, StatsView } from "../web/stats"
-import { ContextView } from "../web/sessions"
-import { dailyStatsQueries, number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
+import { ContextView, RecordedMessageView } from "../web/sessions"
+import { dailyStatsQueries, dateTime, languageHref, money, number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
+import { createI18n } from "../web/i18n"
+import { api } from "../web/shared"
+import ko from "../web/locales/ko.json"
+import en from "../web/locales/en.json"
 import { recordedMessage, requestSummary, type HistoryPage } from "../history"
 import { messages, stats } from "./fixtures"
 
+function renderToStaticMarkup(node: React.ReactNode, language = "ko") {
+  return renderMarkup(<I18nextProvider i18n={createI18n(language)}>{node}</I18nextProvider>)
+}
+
 describe("usage pages", () => {
+  test("renders both languages with isolated instances and translated accessibility labels", () => {
+    for (const [pathname, heading] of [["/stats", "Usage overview"], ["/models", "Usage by model"], ["/tools", "Tool usage"], ["/sessions", "Browse sessions"], ["/sessions/ses_example", "Sessions · per-request context"]]) {
+      const html = renderToStaticMarkup(<App location={{ pathname: pathname!, search: "?lang=en&project=all" }} />)
+      for (const value of [heading, 'lang="en"', 'aria-label="Main menu"', "Start date", "End date", "Language", "lang=en"]) expect(html).toContain(value)
+      expect(html).toMatch(/<option value="en"[^>]*selected=""/)
+      expect(html).not.toContain("조회 / 새로고침")
+    }
+    const english = renderToStaticMarkup(<StatsView stats={stats} section="overview" />, "en")
+    for (const text of ["Cache read", "Cache write", "Chart data table", "$0.000123"]) expect(english).toContain(text)
+    expect(english).not.toContain("캐시 읽기")
+    expect(renderToStaticMarkup(<StatsView stats={stats} section="overview" />)).toContain("캐시 읽기")
+    expect(renderToStaticMarkup(<App location={{ pathname: "/stats", search: "?lang=fr" }} />)).toContain('lang="ko"')
+  })
+
+  test("preserves locale, filters, request selection, cursors and hashes without sending locale to the API", () => {
+    const location = { pathname: "/sessions/ses_example", search: "?from=2026-10-01&to=2026-10-27&project=all&search=hello&request=msg_selected&cursor=next%2B%2F%3D", hash: "#request" }
+    const switched = new URL(languageHref(location, "en"), "http://localhost")
+    const original = new URLSearchParams(location.search)
+    for (const [key, value] of original) expect(switched.searchParams.get(key)).toBe(value)
+    expect(switched.searchParams.get("lang")).toBe("en")
+    expect(switched.hash).toBe("#request")
+    expect(switched.pathname).toBe(location.pathname)
+    const filters = readFilters(switched.search)
+    expect(new URL(pageHref("/models", filters), switched).searchParams.get("lang")).toBe("en")
+    expect(new URL(requestHref("ses_example", "msg_selected", filters, "next+/="), switched).searchParams.get("lang")).toBe("en")
+    expect(new URLSearchParams(dailyStatsQueries(filters)[0]!.query).has("lang")).toBe(false)
+    expect(readFilters("?lang=unsupported").lang).toBe("ko")
+    expect(new URL(languageHref(location, "unsupported"), switched).searchParams.get("lang")).toBe("ko")
+    expect(dateTime(500, "en")).toBe(new Date(500).toLocaleString("en-US"))
+    expect(money(0.000123)).toBe("$0.000123")
+    expect(() => statsQuery("invalid", "2026-10-27", "all", "en")).toThrow("Select valid start and end dates.")
+  })
+
+  test("keeps catalogs complete with matching interpolation variables and English plurals", async () => {
+    const normalize = (key: string) => key.replace(/_(one|other)$/, "")
+    expect([...new Set(Object.keys(en).map(normalize))].sort()).toEqual(Object.keys(ko).sort())
+    for (const [key, value] of Object.entries(en)) {
+      const original = ko[normalize(key) as keyof typeof ko]
+      const variables = (text: string) => [...text.matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort()
+      expect(variables(value)).toEqual(variables(original))
+    }
+    for await (const file of new Bun.Glob("*.{ts,tsx}").scan(fileURLToPath(new URL("../web/", import.meta.url)))) {
+      const source = await Bun.file(new URL(`../web/${file}`, import.meta.url)).text()
+      for (const match of source.matchAll(/\bt\("([^"]+)"/g)) expect(Object.hasOwn(ko, match[1]!)).toBe(true)
+    }
+    const english = createI18n("en")
+    expect(english.t("압축 이전 원기록 · {{count}}개", { count: 1 })).toContain("1 entry")
+    expect(english.t("압축 이전 원기록 · {{count}}개", { count: 2 })).toContain("2 entries")
+    expect(english.t("{{loaded}} / {{total}}일 조회 완료", { loaded: 1, total: 1, count: 1 })).toBe("1 / 1 day loaded")
+    expect(english.t("{{loaded}} / {{total}}일 조회 완료", { loaded: 2, total: 2, count: 2 })).toBe("2 / 2 days loaded")
+    english.removeResourceBundle("en", "translation")
+    expect(english.t("캐시 읽기")).toBe("캐시 읽기")
+  })
+
+  test("translates history labels without changing raw text or the default expanded blocks", () => {
+    const selected = messages.find((message) => message.id === "msg_selected")!
+    if (selected.type !== "assistant") throw new Error("bad fixture")
+    const history: HistoryPage = { request: requestSummary(selected), response: recordedMessage(selected), data: messages.slice(0, 4).map((message) => recordedMessage(message, 500)) }
+    const english = renderToStaticMarkup(<ContextView data={history} hasOlder={false} />, "en")
+    for (const text of ["Saved history before request", "Response to selected request", "Original history before compaction", "Completed", "선택 요청의 응답", "&lt;script&gt;"]) expect(english).toContain(text)
+    expect(english).not.toContain("미래 메시지")
+    expect(english).not.toContain("<script>")
+    const user = recordedMessage(messages[0]!)
+    expect(renderToStaticMarkup(<RecordedMessageView message={user} />, "en")).toMatch(/<details[^>]*open=""[^>]*><summary[^>]*>Message<\/summary>/)
+    expect(renderToStaticMarkup(<RecordedMessageView message={recordedMessage(messages[2]!)} />, "en")).toContain("Compaction summary")
+    const limited = recordedMessage({ ...selected, time: { created: 500 } }, 600)
+    expect(renderToStaticMarkup(<RecordedMessageView message={limited} />, "en")).toContain("not confirmed to have completed")
+    const skill = recordedMessage({ id: "msg_skill", type: "skill", time: { created: 100 }, skill: "review", name: "review", text: "raw skill body" })
+    const skillHtml = renderToStaticMarkup(<RecordedMessageView message={skill} />, "en")
+    expect(skillHtml).toContain("Skill · review")
+    expect(skillHtml).not.toContain("{{name}}")
+    const file = recordedMessage({ id: "msg_file", type: "user", time: { created: 100 }, text: "첨부 원문", files: [{ mime: "image/png", data: "binary-secret", source: { type: "inline" } }] })
+    const fileHtml = renderToStaticMarkup(<RecordedMessageView message={file} />, "en")
+    expect(fileHtml).toContain("Unnamed · image/png")
+    expect(fileHtml).toContain("첨부 원문")
+    expect(fileHtml).not.toContain("binary-secret")
+    const synthetic = recordedMessage({ id: "msg_synthetic", type: "synthetic", time: { created: 100 }, text: "raw context" })
+    expect(renderToStaticMarkup(<RecordedMessageView message={synthetic} />, "en")).toMatch(/<details[^>]*open=""[^>]*><summary[^>]*>Message<\/summary>/)
+  })
+
+  test("translates known API errors and retains safe fallback errors", async () => {
+    const fetch = spyOn(globalThis, "fetch")
+    try {
+      fetch.mockResolvedValueOnce(Response.json({ code: "serviceUnavailable", error: "한국어 원문" }, { status: 503 }))
+      await expect(api("/api/stats", undefined, "en")).rejects.toThrow("Could not find a running OpenCode V2 shared service.")
+      fetch.mockResolvedValueOnce(Response.json({ code: "unknown", error: "Safe original error" }, { status: 400 }))
+      await expect(api("/api/stats", undefined, "en")).rejects.toThrow("Safe original error")
+      fetch.mockResolvedValueOnce(Response.json({}, { status: 500 }))
+      await expect(api("/api/stats", undefined, "en")).rejects.toThrow("Could not load data.")
+    } finally { fetch.mockRestore() }
+  })
+
   test("formats only token counts with uppercase K, M, B, and T suffixes", () => {
     for (const [value, formatted] of [[0, "0"], [999, "999"], [1_000, "1K"], [1_234, "1.23K"], [999_999, "1M"], [1_000_000, "1M"], [1_000_000_000, "1B"], [1_234_567_890_123, "1.23T"]] as const) expect(tokenNumber(value)).toBe(formatted)
     expect(number(1_234)).toBe("1,234")

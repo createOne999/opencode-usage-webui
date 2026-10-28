@@ -6,9 +6,9 @@ import { messages, session, stats } from "./fixtures"
 describe("read-only dashboard server", () => {
   const servers: ReturnType<typeof startDashboard>[] = []
   afterEach(() => { servers.splice(0).forEach((server) => server.stop(true)) })
-  function start(client?: DashboardClient) {
+  function start(client?: DashboardClient, projectID = "current-project") {
     const server = startDashboard({
-      port: 0, directory: "D:/project", projectID: "current-project",
+      port: 0, directory: "D:/project", projectID,
       connect: async () => client,
     })
     servers.push(server)
@@ -174,5 +174,46 @@ describe("read-only dashboard server", () => {
       expect((await request(server, path, { headers: { origin: "https://evil.example" } })).status).toBe(403)
     }
     expect((await request(server, "/api/sessions/ses_example/remove")).status).toBe(404)
+  })
+
+  test("adds stable camelCase error codes alongside existing statuses and messages", async () => {
+    const server = start(client)
+    const read = async (path: string, init?: RequestInit) => {
+      const response = await request(server, path, init)
+      return { status: response.status, body: await response.json() as { error?: string; code?: string } }
+    }
+    const cases: [string, number, string, RequestInit?][] = [
+      ["/api/stats", 403, "localOnly", { headers: { origin: "https://evil.example" } }],
+      ["/api/stats", 405, "readOnly", { method: "POST" }],
+      ["/api/unknown", 404, "notFound"],
+      ["/api/sessions?cursor=" + "a".repeat(8193), 400, "queryTooLong"],
+      ["/api/sessions?parent=invalid", 400, "invalidSelection"],
+      ["/api/stats?tools=invalid", 400, "invalidToolMode"],
+      ["/api/stats?from=nope", 400, "invalidPeriod"],
+      ["/api/stats?from=200&to=100", 400, "invalidRange"],
+      ["/api/stats?timezone=invalid-zone", 400, "invalidTimezone"],
+      ["/api/sessions/ses_example/history?request=msg_user", 400, "selectStep"],
+      ["/api/sessions/ses_example/history?request=msg_selected&cursor=older&older=1", 409, "staleRequest"],
+      ["/missing", 404, "notFound"],
+    ]
+    for (const [path, status, code, init] of cases) {
+      const result = await read(path, init)
+      expect({ path, status: result.status, code: result.body.code }).toEqual({ path, status, code })
+      expect(result.body.error).toBeString()
+    }
+    const noHeader = await fetch(new URL("/api/stats", server.url))
+    expect(noHeader.status).toBe(403)
+    expect((await noHeader.json()).code).toBe("requestHeader")
+    const unavailable = await request(start(), "/api/stats")
+    expect(unavailable.status).toBe(503)
+    expect((await unavailable.json()).code).toBe("serviceUnavailable")
+    const failing = await request(start({ ...client, session: { ...client.session, stats: async () => { throw new Error("secret") } } }), "/api/stats")
+    expect(failing.status).toBe(502)
+    const failure = await failing.text()
+    expect(JSON.parse(failure).code).toBe("upstreamFailure")
+    expect(failure).not.toContain("secret")
+    const longProject = await request(start(client, "p".repeat(257)), "/api/stats")
+    expect(longProject.status).toBe(400)
+    expect((await longProject.json()).code).toBe("invalidProject")
   })
 })

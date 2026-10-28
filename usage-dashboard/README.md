@@ -1,15 +1,17 @@
-# OpenCode 사용량 게시판
+# OpenCode Usage Dashboard
 
-OpenCode V2 서버 플러그인이 **같은 프로세스에서** 제공하는 React + Bun 웹 UI입니다. 별도 DB, 수집기, 상시 실행 데몬 없이 공개 API만 읽습니다.
+**English** | [한국어](README_ko.md)
 
-- **개요:** <http://127.0.0.1:7331/stats> — 요약, 날짜별 Steps·토큰, 토큰 구성
-- **모델:** <http://127.0.0.1:7331/models> — 모델·variant별 토큰/비용 그래프와 표
-- **도구:** <http://127.0.0.1:7331/tools> — 호출 상태 그래프와 실행시간 표
-- **세션:** <http://127.0.0.1:7331/sessions> — 제목 검색, 상·하위 세션, 요청별 컨텍스트
+A React + Bun web UI provided by the OpenCode V2 server plugin **in the same process**. It reads only the public API, with no separate database, collector, or always-on daemon.
 
-## 실행
+- **Overview:** <http://127.0.0.1:7331/stats> — summary, Steps and tokens by date, token breakdown
+- **Models:** <http://127.0.0.1:7331/models> — token/cost charts and table by model and variant
+- **Tools:** <http://127.0.0.1:7331/tools> — call status chart and execution-time table
+- **Sessions:** <http://127.0.0.1:7331/sessions> — title search, parent/child sessions, per-request context
 
-OpenCode **2.2.0**, Bun **1.4.2** 환경을 기준으로 구현했습니다. 저장소 루트에서:
+## Run
+
+Implemented for OpenCode **2.2.0** and Bun **1.4.2**. From the repository root:
 
 ```powershell
 bun install --cwd usage-dashboard
@@ -17,11 +19,11 @@ bun run --cwd usage-dashboard build
 opencode mini
 ```
 
-루트 `opencode.json`이 `./usage-dashboard` 디렉터리를 플러그인으로 불러옵니다. 전역 설정은 변경하지 않습니다. 설정은 자동 반영되므로 이미 실행 중인 OpenCode에서는 서비스 재시작이 필요하지 않습니다. 반영되지 않으면 `/reload`를 사용하거나 프로젝트 루트에서 Mini를 다시 실행하세요.
+The root `opencode.json` loads the `./usage-dashboard` directory as a plugin. It does not change global configuration. Configuration changes are applied automatically, so an already-running OpenCode does not need a service restart. If they do not take effect, use `/reload` or run Mini again from the project root.
 
-프런트엔드 수정 후 `build`를 다시 실행하면 다음 브라우저 새로고침부터 적용됩니다. 플러그인 서버 코드 수정 후에는 `/reload`로 플러그인을 다시 불러오세요. 플러그인 해제·재로딩 시 리스너를 닫습니다.
+After changing the frontend, run `build` again; changes take effect on the next browser refresh. After changing plugin server code, reload the plugin with `/reload`. The listener is closed when the plugin is unloaded or reloaded.
 
-7331 포트가 이미 사용 중이면 플러그인 옵션만 변경합니다:
+If port 7331 is already in use, change only the plugin option:
 
 ```json
 {
@@ -32,59 +34,61 @@ opencode mini
 }
 ```
 
-## 사용량
+## Usage
 
-- 기간·프로젝트 필터: 기본값은 이번 달, 현재 프로젝트입니다. 선택한 종료일을 포함하며 브라우저의 시간대를 사용합니다.
-- 세션·하위 세션·프롬프트·모델 Steps·활동일·최장 연속 활동일.
-- 공급자·모델·variant별 입력·출력·추론·캐시 읽기/쓰기·전체 토큰·USD 비용. 토큰·비용·Steps·이름순 정렬.
-- 도구별 호출·성공·실패·미완료 횟수 및 실행시간 P50(ms), 날짜별 Steps.
-- 전체 토큰은 다섯 토큰 분류의 합입니다. 입력은 비캐시 입력, 출력은 추론을 제외한 가시 출력입니다.
-- 토큰 표시는 1,000배 기준 `K`·`M`·`B`·`T`로 축약하고 소수점은 최대 두 자리입니다. 집계·정렬에는 원본 숫자를 사용하며 Steps·횟수·시간·비용 표시는 유지합니다.
-- 비용은 공급자 보고액과 카탈로그 추정액이 섞일 수 있으며 API에 출처 구분이 없습니다. 단가 미등록으로 0이 될 수도 있어 실제 청구액 또는 무료 사용으로 단정하지 않습니다.
-- 현재 API에서 compaction은 전체 합계에만 포함되므로 모델별 행 합계와 다를 수 있습니다. Title 사용량은 제외됩니다. Steps는 HTTP 요청 수가 아닙니다.
-- 날짜별 Steps는 활동 기록이 있는 날짜만 표시합니다. **일별 토큰 불러오기**를 누르면 선택한 기간을 브라우저 시간대의 1일 단위로 나눠 입력·출력·추론·캐시 읽기/쓰기 그래프와 데이터 표를 표시합니다. 조회 기간은 기존 시작일·종료일로 선택합니다.
-- 일별 토큰은 공개 `session.stats`를 하루당 한 번씩 순차 조회하며 도구 집계는 제외합니다. 최대 100일이고, 실패 시 일부 값을 0으로 채우거나 완전한 결과로 표시하지 않습니다. Steps가 없는 날의 압축 사용량도 포함하려고 모든 날짜를 조회합니다. 전체 세션·대화 본문 수집이나 추가 저장은 하지 않습니다. 조회 시점이 달라 실행 중인 요청의 사용량은 상단 합계와 차이 날 수 있습니다.
-- 모델·도구 그래프는 앞 10개, 표는 전체 항목입니다. 모델 그래프는 표와 같은 정렬을 따릅니다.
-- 기간·프로젝트는 URL에 유지됩니다. 세션 목록은 프로젝트·제목과 최근 수정 순서로 조회하며, 기간 필터는 세션 상세에서 불러온 요청에 적용됩니다. 세션 누적 토큰·비용은 기간 집계가 아닙니다.
+- **Period and project filters:** The defaults are this month and the current project. The selected end date is inclusive, and the browser's time zone is used.
+- Switch between Korean and English using the language selector at the top. Korean is the default and the fallback for missing translations. `?lang=ko|en` is preserved across navigation, refreshes, and shared links. Changing the language preserves existing filters, request, cursor, and hash.
+- Only UI, charts, accessibility guidance, and date display are translated. Original session titles, conversations, tool results, model names, and paths are retained, as are token `K/M/B/T` units, USD costs, and the aggregation time zone. Text inside the date picker follows the browser language. Translations in `web/locales/ko.json` and `en.json` are bundled locally; no external translation service, automatic language detection, or browser storage is used.
+- Sessions, child sessions, prompts, model Steps, active days, and the longest streak of consecutive active days.
+- Input, output, reasoning, cache read/write, total tokens, and USD cost by provider, model, and variant. Sort by tokens, cost, Steps, or name.
+- Calls, successes, failures, and incomplete calls by tool; execution time P50 (ms); Steps by date.
+- Total tokens are the sum of the five token categories. Input means uncached input; output means visible output excluding reasoning.
+- Token values are abbreviated in base-1,000 units as `K`, `M`, `B`, and `T`, with up to two decimal places. Aggregation and sorting use the original numbers; Steps, counts, time, and cost retain their displayed units.
+- Costs may mix provider-reported amounts and catalog estimates, and the API does not distinguish their sources. Missing rates may also result in zero, so do not treat the values as actual billed amounts or conclude that usage was free.
+- In the current API, compaction is included only in the overall total, so it may differ from the sum of model rows. Title usage is excluded. Steps are not HTTP request counts.
+- Steps by date are shown only for dates with activity. Select **Load daily tokens** to split the selected period into one-day intervals in the browser's time zone and display input, output, reasoning, cache read/write charts and a data table. Choose the query period using the existing start and end dates.
+- Daily tokens are queried sequentially, once per day, through the public `session.stats` API; tool aggregation is excluded. On failure, missing values are not filled with zeros, and incomplete results are not presented as complete. All dates are queried to include compaction usage on days without Steps. No full-session or conversation-body collection or additional storage is performed. Since query times differ, usage from in-progress requests may not match the summary total above.
+- Model and tool charts show the first 10 items; their tables show all items. The model chart uses the same sort order as its table.
+- Period and project are preserved in the URL. The session list is queried by project and title, ordered by last modified; the period filter applies to requests loaded in session details. Cumulative session tokens and cost are not period totals.
 
-## 요청 시점의 컨텍스트
+## Context at request time
 
-1. **세션 / 요청**에서 세션을 선택합니다. 하위 세션은 상세의 `하위 세션` 또는 목록의 `하위 세션` 표시로 찾습니다.
-2. 요청 그래프의 점이나 표의 요청 시각을 선택합니다. 키보드 사용자는 같은 요청 시각 링크를 사용할 수 있습니다.
-3. 선택 시점으로 이동해 **요청 직전 저장 이력**과 **선택한 요청의 응답**을 따로 봅니다. URL의 `request`와 페이지 `cursor`를 함께 유지하므로 해당 링크를 다시 열거나 새로고침할 수 있습니다.
-4. `이전 이력 100개 더 보기`로 앞부분을 읽습니다. 압축 요약, 저장된 지침 변경, 스킬, 사용자 메시지, 이전 응답과 도구 결과를 볼 수 있습니다. 바이너리 첨부는 이름·형식만 표시하고 외부 파일/URL은 자동으로 열지 않습니다.
+1. Select a session in **Sessions / requests**. Find child sessions using **Child sessions** in the details or the **Child sessions** indicator in the list.
+2. Select a point on the request chart or a request time in the table. Keyboard users can use the link for the same request time.
+3. The view moves to the selected point and shows **Saved history before request** and **Response to selected request** separately. The URL preserves both `request` and the page `cursor`, so the link can be reopened or refreshed.
+4. Use **Load 100 more history entries** to read earlier entries. The view can include compaction summaries, saved instruction changes, skills, user messages, earlier responses, and tool results. Binary attachments show only their name and type; external files and URLs are not opened automatically.
 
-### 정확성·조회 범위
+### Accuracy and query scope
 
-- **저장 이력 기반 재구성이지 실제 전송 원문이 아닙니다.** 현재 `session.context()`를 과거 요청에 재사용하지 않습니다. 당시 시스템 지침 전체·도구 정의·플러그인 변환·공급자 최종 입력은 복원하지 않습니다.
-- 저장된 메시지 순서상 선택한 Step 이전 항목만 사용하고, 발송 뒤 기록된 입력도 제외합니다. 응답은 별도 영역에 두고, 그 이후 메시지는 입력 이력에 섞지 않습니다. 요청 전에 완료된 것으로 확인되지 않은 이전 응답·도구·셸 결과는 제외합니다. 원본은 현재 투영본이므로 이 검증만으로 당시 상태의 완전 복원을 보장하지는 않습니다.
-- 완료된 압축을 경계로 원기록을 구분합니다. 유지 텍스트 또는 `keepID` 참조를 표시하며, 아직 불러오지 않았거나 누락된 유지 기록은 불완전함을 알립니다. 공급자 압축 창은 같은 공급자·모델일 때만 경계로 사용하고, 원시 재생 데이터는 노출하지 않습니다.
-- 세션은 20개, 메시지는 100개씩 공개 API의 커서로 읽습니다. 요청 그래프는 **현재 불러온 메시지 페이지에서 기간에 맞는 Steps만** 표시하며 전체 세션 추이라고 주장하지 않습니다. 요청이 없는 페이지에서도 다음 페이지로 이동할 수 있습니다.
-- 요청 그래프의 입력 컨텍스트 토큰은 `input + cache.read + cache.write`, 생성 토큰은 `output + reasoning`입니다. 입력 토큰은 모델 최대 컨텍스트 크기나 점유율이 아닙니다. 없는 측정값은 `미집계`로 남기며 0과 구분합니다.
-- 요청 단위는 기록된 모델 Step입니다. 모든 HTTP 요청·재시도의 독립적인 목록은 아닙니다. `session.log()`는 기본 이벤트 보관이 꺼져 있으면 과거 이벤트 없이 `log.synced`만 반환할 수 있어 이 기능의 필수 데이터로 사용하지 않습니다.
-- 이력이 변경되어 요청과 커서가 맞지 않으면 재선택을 안내합니다. 과거 위치를 찾으려고 전체 세션을 자동 스캔하지 않습니다.
+- **This is a reconstruction based on saved history, not the exact content actually sent.** The current `session.context()` is not reused for past requests. The complete system instructions at the time, tool definitions, plugin transformations, and provider's final input are not reconstructed.
+- Only entries before the selected Step in saved-message order are used; input recorded after dispatch is also excluded. The response is shown separately, and later messages are not mixed into input history. Earlier responses, tools, and shell results not confirmed as completed before the request are excluded. The source is the current projection, so these checks do not guarantee a complete reconstruction of the historical state.
+- Completed compactions define boundaries between original records. Retained text or `keepID` references are shown, and retained history that has not yet been loaded or is missing is marked incomplete. The provider compaction window is used as a boundary only for the same provider and model; raw replay data is not exposed.
+- Sessions are read 20 at a time and messages 100 at a time using public API cursors. The request chart shows **only Steps within the period from the currently loaded message page**; it does not claim to show the full session timeline. You can move to the next page even when the current page has no requests.
+- Input-context tokens in the request chart are `input + cache.read + cache.write`; generated tokens are `output + reasoning`. Input tokens are not the model's maximum context size or its utilization. Missing measurements remain **Unavailable**, distinct from zero.
+- A request unit is a recorded model Step, not an independent list of every HTTP request and retry. When default event retention is disabled, `session.log()` may return only `log.synced` without historical events, so it is not used as required data for this feature.
+- If history changes and the request no longer matches the cursor, the UI asks you to select again. It does not automatically scan the full session to find the old position.
 
-## 연결·보안·제약
+## Connections, security, and limitations
 
-- 공식 `Service.discover()`로 **이미 실행 중인 로컬 공유 서비스**를 찾습니다. 서비스를 시작·중지·교체하지 않습니다. `--standalone` 및 원격 `--server` 연결은 이 버전의 대상이 아닙니다.
-- 브라우저는 Bun의 제한된 조회 API에만 접근합니다. OpenCode 인증 헤더·비밀번호는 서버 메모리에만 있고 브라우저에 전달하거나 파일에 저장하지 않습니다.
-- `127.0.0.1`에만 바인딩하고 Host/Origin/Fetch Metadata 및 커스텀 요청 헤더를 검증합니다. CORS를 열지 않으며 모든 쓰기 요청을 거부합니다. 로컬 OS 사용자 간 격리나 외부 공개 서비스용 로그인 기능은 제공하지 않습니다.
-- React/CSS/차트는 로컬 빌드 결과로 제공하며 CDN·외부 폰트·텔레메트리를 사용하지 않습니다. 요청을 선택했을 때 필요한 저장 대화·도구 결과만 화면용으로 조회합니다. 목록에는 본문을 전달하지 않으며, 조회 내용을 로그·파일·브라우저 DB에 추가 저장하지 않습니다.
-- 사용량 API는 experimental입니다. DB를 직접 읽거나 OpenCode 내부 구현을 import하지 않습니다.
-- 한 프로젝트에서 한 인스턴스를 사용하는 최소 구성입니다. 다른 프로젝트에서도 동시에 플러그인을 활성화하려면 포트를 다르게 지정하세요.
-- 자동 폴링 대신 조회/새로고침 시에만 API를 호출합니다. 데이터가 없거나 연결에 실패하면 화면에서 안내합니다.
-- 제거하려면 루트 `opencode.json`에서 이 플러그인 항목을 지우세요. 이 플러그인이 저장한 사용량 데이터는 없습니다.
-- 수정 범위는 `usage-dashboard/`뿐입니다. `reference/opencode/`는 읽기 분석용이며 OpenCode DB·스키마·설정·저장 방식은 변경하지 않습니다. `ctx.storage`를 포함한 추가 저장·캡처도 하지 않습니다.
+- Finds an **already-running local shared service** using the official `Service.discover()`. It does not start, stop, or replace the service. `--standalone` and remote `--server` connections are not supported by this version.
+- The browser accesses only Bun's restricted query API. OpenCode authentication headers and passwords remain in server memory and are not sent to the browser or stored in files.
+- Binds only to `127.0.0.1` and validates Host/Origin/Fetch Metadata and custom request headers. It does not enable CORS and rejects all write requests. It does not provide isolation between local OS users or login for a publicly exposed service.
+- React, CSS, and charts are served from local build output; no CDN, external fonts, or telemetry are used. Only saved conversation and tool results needed for display are queried when a request is selected. Bodies are not sent in lists, and queried content is not additionally stored in logs, files, or a browser database.
+- The usage API is experimental. The dashboard does not read the database directly or import OpenCode internals.
+- This is a minimal setup for one instance in one project. To enable the plugin simultaneously in other projects, specify different ports.
+- The API is called only on query/refresh, not through automatic polling. The UI reports when data is unavailable or the connection fails.
+- To remove the plugin, delete its entry from the root `opencode.json`. This plugin does not store usage data.
+- Changes are limited to `usage-dashboard/`. `reference/opencode/` is for read-only analysis; OpenCode's database, schema, configuration, and storage are not changed. No additional storage or capture is performed, including via `ctx.storage`.
 
-## 디자인
+## Design
 
-- Tailwind CSS v4와 shadcn/ui(Radix 기반), Lucide React를 유지하고 상단 내비게이션으로 페이지를 나눕니다. React Router나 상태관리 라이브러리는 추가하지 않고 일반 링크와 URL 필터를 사용합니다.
-- `web/components/ui/`는 shadcn/ui 소스입니다. `components.json`으로 필요한 컴포넌트만 추가하며, 날짜와 프로젝트 선택은 네이티브 입력 동작을 유지합니다.
-- Recharts 3.10.1로 막대·선 그래프, 툴팁, 기본 방향키 탐색을 재사용합니다. `react-is`는 설치된 React와 같은 19.3.1로 맞춥니다. 테이블은 기존 shadcn Table과 단순 정렬을 유지하며 TanStack Table은 추가하지 않습니다.
-- `build.ts`가 Bun의 Tailwind 플러그인으로 HTML·JS·CSS를 빌드합니다. 자산은 루트 절대 경로로 제공해 세션 상세 주소에서 새로고침해도 로드됩니다. CSS는 별도 로컬 파일로 제공하여 기존 CSP를 유지합니다.
-- 그래프 애니메이션은 끄고 짧은 CSS 전환만 사용하며 `prefers-reduced-motion`을 존중합니다. Motion·React Aria·reactbits는 추가하지 않습니다. 집계 그래프에는 접을 수 있는 데이터 표, 요청 그래프에는 동일 시점의 요청 링크를 제공합니다.
+- Retains Tailwind CSS v4, shadcn/ui (Radix-based), and Lucide React, with pages separated by top navigation. It uses ordinary links and URL filters rather than adding React Router or a state-management library.
+- `web/components/ui/` contains shadcn/ui source. Add only needed components through `components.json`; date and project selection retain native input behavior.
+- Reuses Recharts 3.10.1 for bar/line charts, tooltips, and basic arrow-key navigation. `react-is` is kept at 19.3.1 to match the installed React version. Tables retain the existing shadcn Table and simple sorting; TanStack Table is not added.
+- `build.ts` builds HTML, JS, and CSS with Bun's Tailwind plugin. Assets are served from root-absolute paths so they load after refreshing a session detail URL. CSS is served as a separate local file to preserve the existing CSP.
+- Chart animations are disabled; only short CSS transitions are used, respecting `prefers-reduced-motion`. Motion, React Aria, and reactbits are not added. Aggregation charts have collapsible data tables, and request charts provide links to the corresponding request time.
 
-## 검증
+## Validation
 
 ```powershell
 bun run --cwd usage-dashboard build
@@ -92,6 +96,6 @@ bun run --cwd usage-dashboard typecheck
 bun run --cwd usage-dashboard test
 ```
 
-테스트는 가상 API 응답을 사용하며 실제 계정이나 세션을 수정하지 않습니다. API 필터·보안 경계·오류 처리·리스너 정리, 중첩 주소의 자산 로드, 토큰 합산·페이지 분리·URL 유지·HTML 이스케이프·선택 이후 메시지 제외·응답 분리·커서 페이지·호환 압축 경계·유지 이력 누락·늦게 완료된 출력 제외를 검증합니다. 한도 기능은 제거했으며 `/limits`와 `/api/limits`는 404를 반환합니다.
+Tests use mocked API responses and do not modify real accounts or sessions. They cover API filters, security boundaries, error handling and listener cleanup; asset loading at nested URLs; token aggregation; page separation; URL preservation; HTML escaping; excluding messages after selection; response separation; cursor pagination; compatible compaction boundaries; missing retained history; and excluding late-completing output. The limits feature was removed; `/limits` and `/api/limits` return 404.
 
-Chromium과 가상 API로 390/768/1440px의 5개 화면, 요청 그래프 클릭→선택 시점 이동, 이전 이력 추가 조회, 응답 분리·미래 메시지 제외, 커서가 있는 요청 링크의 새로고침 복원, 방향키 툴팁, 빈 모델/도구/세션, 조회 오류 재시도 복구를 확인했습니다. CSP 완화 없이 차트가 동작합니다. 실제 실행 중인 OpenCode 2.2.0에서도 세션·요청·이력 읽기 프록시의 정상 응답을 확인했습니다. 서비스 시작·재시작이나 DB 직접 접근은 하지 않습니다.
+With Chromium and a mocked API, five screens at 390/768/1440px were checked, along with clicking the request chart and moving to the selected point, loading more earlier history, response separation and excluding future messages, restoring a request link with a cursor after refresh, arrow-key tooltips, empty model/tool/session states, and recovery by retry after query errors. Charts work without relaxing the CSP. Normal responses from the session, request, and history read proxies were also confirmed against a running OpenCode 2.2.0. No service start/restart or direct database access was performed.
