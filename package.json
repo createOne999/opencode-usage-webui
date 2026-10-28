@@ -22,7 +22,7 @@
     "README_ko.md"
   ],
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
     "setup": "bun install && bun run build",

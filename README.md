@@ -11,9 +11,18 @@ Run **`/usage-dashboard` in OpenCode Mini or the full TUI** to open the dashboar
 - **Tools:** call status chart and execution-time table
 - **Sessions:** title search, parent/child sessions, per-request context
 
-## Install from npm
+## Install from GitHub Packages
 
-After the initial publication, install the plugin in a project by adding it to `opencode.json`:
+After the first GitHub Packages release, configure npm access, then add the plugin to `opencode.json`:
+
+GitHub Packages requires a **personal access token (classic)** with `read:packages`, even for public packages; fine-grained tokens are not supported. Create or update your user-level `.npmrc` (`%USERPROFILE%\.npmrc` on Windows), not the project's `.npmrc`, with the scoped registry and an environment-variable token reference:
+
+```ini
+@createone999:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+Set `NODE_AUTH_TOKEN` in the environment of the OpenCode server process as well as any shell that needs npm access. Do not put a real token in this file or override npm's default registry: other packages, including `@opencode` packages, must continue to resolve from npmjs. See [GitHub's npm registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
 
 ```json
 {
@@ -33,7 +42,7 @@ This uses OpenCode 2.2.0's local shared service. Run `/usage-dashboard` in OpenC
 }
 ```
 
-Use either the npm package or the local source plugin below, not both: they share the plugin ID `local.usage-dashboard`. No global npm install or user build/postinstall step is needed; the package includes prebuilt assets. Until the first npm release, use the source setup below.
+Use either the npm package or the local source plugin below, not both: they share the plugin ID `local.usage-dashboard`. No global npm install or user build/postinstall step is needed; the package includes prebuilt assets. Until the first GitHub Packages release, use the source setup below.
 
 ## Run from source
 
@@ -131,9 +140,9 @@ If port 7331 is already in use, change only the plugin option:
 
 CI runs typecheck, build, then tests on pull requests and pushes to `main`, using the frozen Bun lockfile. Publishing runs only when a regular GitHub Release is published (drafts and prereleases are skipped); its tag must exactly match `v<package.json version>`. Versions are never bumped automatically. The workflows use Bun 1.4.2 and Node 24.
 
-For the first release, use Bun 1.4.2 and Node 24, then run `bun install --frozen-lockfile`, `bun run typecheck`, `bun run build`, `bun run test`, and `npm pack --dry-run`. Inspect the package contents to confirm runtime TypeScript files and `dist` are included and no source dependencies are missing. Then run `npm login` and `npm publish` (`publishConfig` sets public access). Publish version `0.1.0` manually; do not publish a `v0.1.0` GitHub Release expecting it to republish that version—npm versions are immutable.
+Push the publishing workflow to `main`, then publish a regular GitHub Release tagged `v<package.json version>` (currently `v0.1.0`) at that commit. The workflow runs checks and publishes to GitHub Packages using its automatic `GITHUB_TOKEN` with `packages: write`; no npm account, npm token, or custom publishing PAT is needed. The first package is private by default. To distribute it publicly, go to the package's **Settings → Change visibility → Public**; this change cannot be reversed.
 
-After the first publish, configure npm **Settings → Trusted Publisher → GitHub Actions** for owner `createOne999`, repository `oud`, workflow filename `publish.yml` (filename only), and enable **Allow npm publish**. The workflow uses OIDC; no GitHub npm token is needed. Ensure the workflow is merged to `main`. A new trusted publisher must make its first successful OIDC publish within two days, so configure it when the next release is ready: update `package.json` to a new version (for example, `0.1.1`), sync `bun.lock` if needed, commit and push, then publish a regular GitHub Release tagged `v0.1.1` at that version-bump commit. See [npm trusted publishers](https://docs.npmjs.com/trusted-publishers/). Provenance is automatic only for a public GitHub repository and public package; private repositories can still publish without provenance.
+For later releases, bump the version in `package.json`, commit and push the change, then publish a regular GitHub Release with the matching `v<version>` tag at the version-bump commit. See [GitHub's npm registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
 
 ## Validation
 

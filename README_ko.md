@@ -11,9 +11,18 @@ OpenCode V2 서버 플러그인이 **같은 프로세스에서** 제공하는 Re
 - **도구:** 호출 상태 그래프와 실행시간 표
 - **세션:** 제목 검색, 상·하위 세션, 요청별 컨텍스트
 
-## npm 설치
+## GitHub Packages 설치
 
-최초 npm 배포가 완료된 후 프로젝트의 `opencode.json`에 플러그인을 추가해 설치합니다:
+첫 GitHub Packages 배포 후 npm 접근을 설정하고 프로젝트의 `opencode.json`에 플러그인을 추가합니다:
+
+GitHub Packages는 공개 패키지에도 `read:packages` 권한이 있는 **personal access token (classic)**을 요구합니다. fine-grained token은 지원하지 않습니다. 프로젝트가 아닌 사용자 홈의 `.npmrc`(Windows: `%USERPROFILE%\.npmrc`)에 범위별 레지스트리와 환경 변수 토큰 참조를 설정하세요:
+
+```ini
+@createone999:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
+`NODE_AUTH_TOKEN`은 npm을 사용하는 셸뿐 아니라 OpenCode 서버 프로세스 환경에도 설정해야 합니다. 실제 토큰을 파일에 쓰지 말고, npm 기본 레지스트리를 전역 변경하지 마세요. `@opencode` 등 다른 패키지는 계속 npmjs에서 받아야 합니다. 자세한 내용은 [GitHub npm 레지스트리 문서](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)를 참고하세요.
 
 ```json
 {
@@ -33,7 +42,7 @@ OpenCode 2.2.0의 로컬 공유 서비스를 사용합니다. OpenCode에서 `/u
 }
 ```
 
-npm 패키지와 아래 로컬 소스 플러그인을 동시에 사용하지 마세요. 두 플러그인의 ID가 `local.usage-dashboard`로 같습니다. 전역 npm 설치나 사용자의 빌드/postinstall 단계는 필요하지 않습니다. 패키지에 빌드된 자산이 포함됩니다. 최초 npm 배포 전에는 아래 소스 설정을 사용하세요.
+npm 패키지와 아래 로컬 소스 플러그인을 동시에 사용하지 마세요. 두 플러그인의 ID가 `local.usage-dashboard`로 같습니다. 전역 npm 설치나 사용자의 빌드/postinstall 단계는 필요하지 않습니다. 패키지에 빌드된 자산이 포함됩니다. 첫 GitHub Packages 배포 전에는 아래 소스 설정을 사용하세요.
 
 ## 소스에서 실행
 
@@ -131,9 +140,9 @@ bun run status
 
 CI는 pull request와 `main` 푸시에서 고정 Bun lockfile을 사용해 typecheck → build → test 순서로 실행합니다. 배포는 일반 GitHub Release를 게시할 때만 실행되며(draft와 prerelease 제외), 태그는 `v<package.json 버전>`과 정확히 일치해야 합니다. 버전은 자동으로 올리지 않습니다. 워크플로는 Bun 1.4.2와 Node 24를 사용합니다.
 
-최초 배포는 Bun 1.4.2와 Node 24를 준비한 뒤 `bun install --frozen-lockfile`, `bun run typecheck`, `bun run build`, `bun run test`, `npm pack --dry-run`을 실행합니다. 패키지에 런타임 TypeScript 파일과 `dist`가 포함되고 필요한 소스 의존성이 빠지지 않았는지 확인하세요. 이어서 `npm login`과 `npm publish`를 실행합니다(`publishConfig`가 공개 접근을 설정합니다). `0.1.0`은 수동으로 최초 배포하세요. 같은 버전을 다시 배포하려고 `v0.1.0` GitHub Release를 게시하지 마세요. npm 버전은 변경할 수 없습니다.
+배포 워크플로를 `main`에 푸시한 뒤 해당 커밋에서 `v<package.json 버전>`(현재 `v0.1.0`) 태그로 일반 GitHub Release를 게시합니다. 워크플로가 검사를 실행하고 자동 `GITHUB_TOKEN`과 `packages: write` 권한으로 GitHub Packages에 배포합니다. npm 계정, npm 토큰, 별도 배포용 PAT는 필요하지 않습니다. 첫 패키지는 기본적으로 비공개입니다. 공개 배포하려면 패키지 **Settings → Change visibility → Public**에서 공개로 변경하세요. 공개 변경은 되돌릴 수 없습니다.
 
-최초 배포 후 npm **Settings → Trusted Publisher → GitHub Actions**에서 소유자 `createOne999`, 저장소 `oud`, 워크플로 파일명 `publish.yml`(경로 제외), **Allow npm publish**를 설정합니다. 워크플로는 OIDC를 사용하므로 GitHub npm 토큰은 필요하지 않습니다. 워크플로가 `main`에 병합됐는지 확인하세요. 새 Trusted Publisher는 2일 안에 첫 OIDC 배포를 성공해야 하므로 다음 배포가 준비됐을 때 설정하세요. `package.json` 버전을 새 버전(예: `0.1.1`)으로 변경하고 필요하면 `bun.lock`을 동기화한 뒤 커밋·푸시하고, 해당 버전 변경 커밋을 가리키는 `v0.1.1` 일반 GitHub Release를 게시합니다. 자세한 내용은 [npm Trusted Publishers](https://docs.npmjs.com/trusted-publishers/)를 참고하세요. Provenance는 공개 GitHub 저장소와 공개 패키지에서만 자동 생성됩니다. 비공개 저장소도 provenance 없이 배포할 수 있습니다.
+이후 배포는 `package.json` 버전을 올려 커밋·푸시한 뒤 해당 버전 변경 커밋에서 일치하는 `v<버전>` 태그의 일반 GitHub Release를 게시합니다. 자세한 내용은 [GitHub npm 레지스트리 문서](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)를 참고하세요.
 
 ## 검증
 
