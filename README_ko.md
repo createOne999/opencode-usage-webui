@@ -11,25 +11,51 @@ OpenCode V2 서버 플러그인이 **같은 프로세스에서** 제공하는 Re
 - **도구:** 호출 상태 그래프와 실행시간 표
 - **세션:** 제목 검색, 상·하위 세션, 요청별 컨텍스트
 
-## 실행
+## npm 설치
+
+최초 npm 배포가 완료된 후 프로젝트의 `opencode.json`에 플러그인을 추가해 설치합니다:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["@createone999/oud@0.1.0"]
+}
+```
+
+OpenCode 2.2.0의 로컬 공유 서비스를 사용합니다. OpenCode에서 `/usage-dashboard`를 실행하세요. 실제 접속 주소도 로그에 표시됩니다. 기본 포트는 7331입니다. 여러 프로젝트나 전역 설정에서는 충돌을 피하도록 서로 다른 포트(또는 사용 가능한 포트를 선택하는 `0`)를 지정하세요:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    { "package": "@createone999/oud@0.1.0", "options": { "port": 7332 } }
+  ]
+}
+```
+
+npm 패키지와 아래 로컬 소스 플러그인을 동시에 사용하지 마세요. 두 플러그인의 ID가 `local.usage-dashboard`로 같습니다. 전역 npm 설치나 사용자의 빌드/postinstall 단계는 필요하지 않습니다. 패키지에 빌드된 자산이 포함됩니다. 최초 npm 배포 전에는 아래 소스 설정을 사용하세요.
+
+## 소스에서 실행
 
 OpenCode **2.2.0**, Bun **1.4.2** 환경을 기준으로 구현했습니다. 저장소 루트에서:
 
 ```powershell
-bun run --cwd usage-dashboard setup
+bun run setup
 opencode mini
 # OpenCode 안에서: /usage-dashboard
 ```
 
-루트 `opencode.json`이 `./usage-dashboard` 디렉터리를 플러그인으로 불러옵니다. 전역 설정은 변경하지 않습니다. 설정은 자동 반영되므로 이미 실행 중인 OpenCode에서는 서비스 재시작이 필요하지 않습니다. 반영되지 않으면 `/reload`를 사용하거나 프로젝트 루트에서 Mini를 다시 실행하세요.
+저장소 루트의 `opencode.json`은 소스 사용을 위해 저장소 루트(`./`)를 플러그인으로 불러옵니다. 이 파일은 로컬 설정으로 유지되며 전역 설정은 변경하지 않습니다. 설정은 자동 반영되므로 이미 실행 중인 OpenCode에서는 서비스 재시작이 필요하지 않습니다. 반영되지 않으면 `/reload`를 사용하거나 프로젝트 루트에서 Mini를 다시 실행하세요.
 
 브라우저를 열지 못한 경우에도 다음 명령으로 실제 접속 주소와 준비 상태를 터미널에서 확인할 수 있습니다:
 
 ```powershell
-bun run --cwd usage-dashboard status
+bun run status
 ```
 
-이미 실행 중인 공유 서비스를 찾고 OpenCode의 인증된 플러그인 RPC로 조회하며, 서비스를 시작·재시작하지 않습니다. 먼저 이 저장소 루트에서 Mini를 실행하세요. 준비 상태는 리스너·빌드 기준이며 데이터 조회 오류는 기존처럼 대시보드에서 안내합니다. 빌드 누락·포트 충돌·서비스 연결 실패는 다음 조치와 함께 안내합니다. 브라우저는 서버가 실행되는 PC에서 열리므로 헤드리스·원격·WSL 환경에서는 표시된 주소로 직접 접속하세요.
+설치한 패키지에서는 상태 스크립트를 직접 실행합니다(CLI bin 아님): `bun /path/to/node_modules/@createone999/oud/status.ts /path/to/project`.
+
+이미 실행 중인 공유 서비스를 찾고 OpenCode의 인증된 플러그인 RPC로 조회하며, 서비스를 시작·재시작하지 않습니다. 먼저 프로젝트 디렉터리에서 Mini를 실행하세요. 준비 상태는 리스너·빌드 기준이며 데이터 조회 오류는 기존처럼 대시보드에서 안내합니다. 빌드 누락·포트 충돌·서비스 연결 실패는 다음 조치와 함께 안내합니다. 브라우저는 서버가 실행되는 PC에서 열리므로 헤드리스·원격·WSL 환경에서는 표시된 주소로 직접 접속하세요.
 
 직접 접속할 때 기본 주소는 <http://127.0.0.1:7331/stats>입니다. `http://localhost:7331/stats`와 IPv6를 사용할 수 있는 환경의 `http://[::1]:7331/stats`도 지원합니다. 같은 기본 주소에 `/models`, `/tools`, `/sessions` 화면이 있습니다. 포트 옵션을 바꿨다면 7331로 추측하지 말고 `status`로 확인하세요. `port: 0`은 사용 가능한 포트를 선택합니다.
 
@@ -41,7 +67,7 @@ bun run --cwd usage-dashboard status
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "./usage-dashboard", "options": { "port": 7332 } }
+    { "package": "./", "options": { "port": 7332 } }
   ]
 }
 ```
@@ -90,8 +116,8 @@ bun run --cwd usage-dashboard status
 - 사용량 API는 experimental입니다. DB를 직접 읽거나 OpenCode 내부 구현을 import하지 않습니다.
 - 한 프로젝트에서 한 인스턴스를 사용하는 최소 구성입니다. 다른 프로젝트에서도 동시에 플러그인을 활성화하려면 포트를 다르게 지정하세요.
 - 자동 폴링 대신 조회/새로고침 시에만 API를 호출합니다. 데이터가 없거나 연결에 실패하면 화면에서 안내합니다.
-- 제거하려면 루트 `opencode.json`에서 이 플러그인 항목을 지우세요. 이 플러그인이 저장한 사용량 데이터는 없습니다.
-- 수정 범위는 `usage-dashboard/`뿐입니다. `reference/opencode/`는 읽기 분석용이며 OpenCode DB·스키마·설정·저장 방식은 변경하지 않습니다. `ctx.storage`를 포함한 추가 저장·캡처도 하지 않습니다.
+- 제거하려면 플러그인을 추가한 OpenCode 설정에서 해당 항목을 지우세요. 이 플러그인이 저장한 사용량 데이터는 없습니다.
+- `reference/opencode/`는 읽기 분석용이며 OpenCode DB·스키마·설정·저장 방식은 변경하지 않습니다. `ctx.storage`를 포함한 추가 저장·캡처도 하지 않습니다.
 
 ## 디자인
 
@@ -103,10 +129,12 @@ bun run --cwd usage-dashboard status
 
 ## 검증
 
+MIT 라이선스입니다. [LICENSE](LICENSE)를 확인하세요.
+
 ```powershell
-bun run --cwd usage-dashboard build
-bun run --cwd usage-dashboard typecheck
-bun run --cwd usage-dashboard test
+bun run build
+bun run typecheck
+bun run test
 ```
 
 테스트는 가상 API 응답을 사용하며 실제 계정이나 세션을 수정하지 않습니다. API 필터·보안 경계·오류 처리·리스너 정리, 중첩 주소의 자산 로드, 토큰 합산·페이지 분리·URL 유지·HTML 이스케이프·선택 이후 메시지 제외·응답 분리·커서 페이지·호환 압축 경계·유지 이력 누락·늦게 완료된 출력 제외를 검증합니다. 한도 기능은 제거했으며 `/limits`와 `/api/limits`는 404를 반환합니다.

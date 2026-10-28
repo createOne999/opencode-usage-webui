@@ -40,7 +40,7 @@ export default Plugin.define({
       if (!(await Bun.file(new URL("./dist/index.html", import.meta.url)).exists())) return {
         url,
         ready: false,
-        error: { code: "missingBuild", message: "대시보드 빌드가 없습니다. usage-dashboard 폴더에서 bun run build를 실행해 주세요." },
+        error: { code: "missingBuild", message: "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/oud를 재설치해 주세요." },
       }
       return { url, ready: true }
     }
@@ -54,7 +54,7 @@ export default Plugin.define({
             const current = await status()
             if (current.error && current.error.code !== "missingBuild") throw new Error(current.error.message)
             const failure = await openDashboard(current.url)
-            if (failure) throw new Error(`브라우저를 열지 못했습니다 (${failure}). ${current.url}\n접속 주소와 상태: bun run --cwd usage-dashboard status`)
+            if (failure) throw new Error(`브라우저를 열지 못했습니다 (${failure}). ${current.url}`)
           },
         })
       })
@@ -66,7 +66,7 @@ export default Plugin.define({
     }
 
     if (server) console.info(`[usage-dashboard] ${server.url}stats · ${server.url}sessions`)
-    else console.error(`[usage-dashboard] 포트 ${port}을(를) 사용할 수 없습니다. bun run --cwd usage-dashboard status로 상태를 확인해 주세요.`)
+    else console.error(`[usage-dashboard] 포트 ${port}을(를) 사용할 수 없습니다. options.port를 바꾸거나 프로젝트 디렉터리에서 상태를 확인해 주세요.`)
     return () => server?.stop(true)
   },
 })

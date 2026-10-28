@@ -104,6 +104,10 @@ describe("usage pages", () => {
     try {
       fetch.mockResolvedValueOnce(Response.json({ code: "serviceUnavailable", error: "한국어 원문" }, { status: 503 }))
       await expect(api("/api/stats", undefined, "en")).rejects.toThrow("Could not find a running OpenCode V2 shared service.")
+      for (const language of ["ko", "en"]) {
+        fetch.mockResolvedValueOnce(Response.json({ code: "buildRequired", error: "Build missing" }, { status: 503 }))
+        await expect(api("/stats", undefined, language)).rejects.toThrow("@createone999/oud")
+      }
       fetch.mockResolvedValueOnce(Response.json({ code: "unknown", error: "Safe original error" }, { status: 400 }))
       await expect(api("/api/stats", undefined, "en")).rejects.toThrow("Safe original error")
       fetch.mockResolvedValueOnce(Response.json({}, { status: 500 }))

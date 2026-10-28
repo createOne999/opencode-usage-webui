@@ -77,7 +77,7 @@ export function startDashboard(options: Options) {
 
         try {
           const client = await options.connect()
-          if (!client) return fail(503, "serviceUnavailable", "실행 중인 OpenCode V2 공유 서비스를 찾지 못했습니다. opencode mini를 실행해 주세요.")
+          if (!client) return fail(503, "serviceUnavailable", "실행 중인 OpenCode V2 공유 서비스를 찾지 못했습니다. 프로젝트 디렉터리에서 OpenCode를 실행해 주세요.")
           const requestOptions = { signal: AbortSignal.any([request.signal, AbortSignal.timeout(20_000)]) }
           if (url.pathname === "/api/stats") return json(await client.session.stats(input, requestOptions))
           if (url.pathname === "/api/sessions") {
@@ -115,7 +115,7 @@ export function startDashboard(options: Options) {
 
       if (["/", "/stats", "/models", "/tools", "/sessions"].includes(url.pathname) || /^\/sessions\/ses_[\w-]{1,252}$/.test(url.pathname)) {
         const file = Bun.file(new URL("./dist/index.html", import.meta.url))
-        if (!(await file.exists())) return fail(503, "buildRequired", "usage-dashboard 폴더에서 bun run build를 먼저 실행해 주세요.")
+        if (!(await file.exists())) return fail(503, "buildRequired", "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/oud를 재설치해 주세요.")
         return new Response(file, { headers })
       }
       if (/^\/[\w.-]+\.(js|css)$/.test(url.pathname)) {

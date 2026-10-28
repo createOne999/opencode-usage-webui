@@ -3,14 +3,11 @@ import { OpenCode } from "@opencode/client"
 import { Service } from "@opencode/client/service"
 import { DashboardRpc, type DashboardStatus } from "./rpc"
 
-// Resolve the plugin's project root even when Bun runs this from usage-dashboard.
-const root = resolve(import.meta.dir, "..")
-
-export async function runStatus() {
+export async function runStatus(directory = process.cwd()) {
   const endpoint = await Service.discover({ version: (version) => version.startsWith("2.") }).catch(() => undefined)
   if (!endpoint) {
     console.error("error: serviceUnavailable")
-    console.error("action: 저장소 루트에서 opencode mini를 실행하고 플러그인이 로드된 서비스에서 /reload를 실행한 뒤 다시 시도해 주세요.")
+    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/oud를 재설치한 뒤 다시 시도해 주세요.")
     return 1
   }
 
@@ -20,7 +17,7 @@ export async function runStatus() {
       baseUrl: endpoint.url,
       headers: Service.headers(endpoint),
     }).rpc(DashboardRpc).info({}, {
-      location: { directory: root },
+      location: { directory: resolve(directory) },
       signal: AbortSignal.timeout(5000),
     }) as DashboardStatus
 
@@ -35,9 +32,9 @@ export async function runStatus() {
     return 1
   } catch {
     console.error("error: serviceUnavailable")
-    console.error("action: 저장소 루트에서 opencode mini를 실행하고 플러그인이 로드된 서비스에서 /reload를 실행한 뒤 다시 시도해 주세요.")
+    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/oud를 재설치한 뒤 다시 시도해 주세요.")
     return 1
   }
 }
 
-if (import.meta.main) process.exitCode = await runStatus()
+if (import.meta.main) process.exitCode = await runStatus(process.argv[2])

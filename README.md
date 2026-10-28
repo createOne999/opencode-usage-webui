@@ -11,25 +11,51 @@ Run **`/usage-dashboard` in OpenCode Mini or the full TUI** to open the dashboar
 - **Tools:** call status chart and execution-time table
 - **Sessions:** title search, parent/child sessions, per-request context
 
-## Run
+## Install from npm
+
+After the initial publication, install the plugin in a project by adding it to `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": ["@createone999/oud@0.1.0"]
+}
+```
+
+This uses OpenCode 2.2.0's local shared service. Run `/usage-dashboard` in OpenCode; the actual URL is also logged. The default port is 7331. For multiple projects or a global configuration, set a distinct port (or use `0` to select an available port) to avoid conflicts:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    { "package": "@createone999/oud@0.1.0", "options": { "port": 7332 } }
+  ]
+}
+```
+
+Use either the npm package or the local source plugin below, not both: they share the plugin ID `local.usage-dashboard`. No global npm install or user build/postinstall step is needed; the package includes prebuilt assets. Until the first npm release, use the source setup below.
+
+## Run from source
 
 Implemented for OpenCode **2.2.0** and Bun **1.4.2**. From the repository root:
 
 ```powershell
-bun run --cwd usage-dashboard setup
+bun run setup
 opencode mini
 # In OpenCode: /usage-dashboard
 ```
 
-The root `opencode.json` loads the `./usage-dashboard` directory as a plugin. It does not change global configuration. Configuration changes are applied automatically, so an already-running OpenCode does not need a service restart. If they do not take effect, use `/reload` or run Mini again from the project root.
+The repository's root `opencode.json` loads the repository root (`./`) as a plugin for source use; it is intentionally left local and does not change global configuration. Configuration changes are applied automatically, so an already-running OpenCode does not need a service restart. If they do not take effect, use `/reload` or run Mini again from the project root.
 
 To print the actual URL and readiness in your terminal, including when the browser cannot be opened:
 
 ```powershell
-bun run --cwd usage-dashboard status
+bun run status
 ```
 
-This command discovers an already-running shared service and uses OpenCode's authenticated plugin RPC; it never starts or restarts the service. Run Mini from this repository root first. Readiness checks the listener and build; data-query errors are still reported by the dashboard. Build, port, and service failures include a suggested next action. Browser opening happens on the server's PC and may be unavailable in headless, remote, or WSL environments; use the printed URL instead.
+For an installed package, run its status script directly (it is not a CLI bin): `bun /path/to/node_modules/@createone999/oud/status.ts /path/to/project`.
+
+This command discovers an already-running shared service and uses OpenCode's authenticated plugin RPC; it never starts or restarts the service. Run Mini from the project directory first. Readiness checks the listener and build; data-query errors are still reported by the dashboard. Build, port, and service failures include a suggested next action. Browser opening happens on the server's PC and may be unavailable in headless, remote, or WSL environments; use the printed URL instead.
 
 For manual access, the default is <http://127.0.0.1:7331/stats>. `http://localhost:7331/stats` and, when IPv6 is available, `http://[::1]:7331/stats` also work. The same base URL has `/models`, `/tools`, and `/sessions` pages. Use `status` rather than assuming port 7331 after changing the plugin option; `port: 0` selects an available port.
 
@@ -41,7 +67,7 @@ If port 7331 is already in use, change only the plugin option:
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "./usage-dashboard", "options": { "port": 7332 } }
+    { "package": "./", "options": { "port": 7332 } }
   ]
 }
 ```
@@ -90,8 +116,8 @@ If port 7331 is already in use, change only the plugin option:
 - The usage API is experimental. The dashboard does not read the database directly or import OpenCode internals.
 - This is a minimal setup for one instance in one project. To enable the plugin simultaneously in other projects, specify different ports.
 - The API is called only on query/refresh, not through automatic polling. The UI reports when data is unavailable or the connection fails.
-- To remove the plugin, delete its entry from the root `opencode.json`. This plugin does not store usage data.
-- Changes are limited to `usage-dashboard/`. `reference/opencode/` is for read-only analysis; OpenCode's database, schema, configuration, and storage are not changed. No additional storage or capture is performed, including via `ctx.storage`.
+- To remove the plugin, delete its entry from the OpenCode config where you added it. This plugin does not store usage data.
+- `reference/opencode/` is for read-only analysis; OpenCode's database, schema, configuration, and storage are not changed. No additional storage or capture is performed, including via `ctx.storage`.
 
 ## Design
 
@@ -103,10 +129,12 @@ If port 7331 is already in use, change only the plugin option:
 
 ## Validation
 
+MIT licensed; see [LICENSE](LICENSE).
+
 ```powershell
-bun run --cwd usage-dashboard build
-bun run --cwd usage-dashboard typecheck
-bun run --cwd usage-dashboard test
+bun run build
+bun run typecheck
+bun run test
 ```
 
 Tests use mocked API responses and do not modify real accounts or sessions. They cover API filters, security boundaries, error handling and listener cleanup; asset loading at nested URLs; token aggregation; page separation; URL preservation; HTML escaping; excluding messages after selection; response separation; cursor pagination; compatible compaction boundaries; missing retained history; and excluding late-completing output. The limits feature was removed; `/limits` and `/api/limits` return 404.

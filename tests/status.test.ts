@@ -44,7 +44,7 @@ describe("usage dashboard status CLI", () => {
           expect(new URL(request.url).pathname).toBe("/api/rpc/local.usage-dashboard/info")
           expect(request.headers.get("authorization")).toBe(`Basic ${btoa(`opencode:${secret}`)}`)
           expect(await request.json()).toEqual({ input: {} })
-          expect(new URL(request.url).searchParams.get("location[directory]")).toBe(resolve(import.meta.dir, "../.."))
+          expect(new URL(request.url).searchParams.get("location[directory]")).toBe(resolve("status-test-project"))
           return item.failure
             ? new Response(secret, { status: 500 })
             : Response.json({ output: item.response })
@@ -52,7 +52,7 @@ describe("usage dashboard status CLI", () => {
       })
       discovery = spyOn(Service, "discover").mockResolvedValue({ url: `http://127.0.0.1:${server.port}`, auth: { type: "basic", username: "opencode", password: secret } })
 
-      expect(await runStatus()).toBe(item.code)
+      expect(await runStatus("status-test-project")).toBe(item.code)
       expect([...logs, ...errors].join("\n")).toContain(item.output)
       expect([...logs, ...errors].join("\n")).not.toContain(secret)
       expect(requestSeen).toBe(true)
@@ -78,8 +78,23 @@ describe("usage dashboard status CLI", () => {
       expect(await runStatus()).toBe(1)
       expect(errors.join("\n")).not.toContain(secret)
       expect(errors.join("\n")).toContain("/reload")
+      expect(errors.join("\n")).toContain("프로젝트 디렉터리")
       discovery.mockRestore()
       discovery = undefined
     }
+  })
+
+  test("defaults the status location to cwd", async () => {
+    console.log = (...args) => logs.push(args.join(" "))
+    server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      fetch(request) {
+        expect(new URL(request.url).searchParams.get("location[directory]")).toBe(resolve(process.cwd()))
+        return Response.json({ output: { url: "http://127.0.0.1:7331/stats", ready: true } })
+      },
+    })
+    discovery = spyOn(Service, "discover").mockResolvedValue({ url: `http://127.0.0.1:${server.port}`, auth: { type: "basic", username: "opencode", password: secret } })
+    expect(await runStatus()).toBe(0)
   })
 })

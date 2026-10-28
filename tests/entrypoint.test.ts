@@ -131,7 +131,7 @@ describe("plugin entrypoint", () => {
       spawn.mockImplementation(() => { throw new Error("Bearer secret-token") })
       const error = await app.commands[0]!.execute().catch((error: Error) => error)
       expect(error).toBeInstanceOf(Error)
-      expect(String(error)).toContain("bun run --cwd usage-dashboard status")
+      expect(String(error)).toContain(url)
       expect(String(error)).not.toContain("secret-token")
     } finally { spawn.mockRestore() }
   })
@@ -145,7 +145,7 @@ describe("plugin entrypoint", () => {
       const status = await app.readStatus()
       expect(status.ready).toBe(false)
       expect(status.error?.code).toBe("missingBuild")
-      expect(status.error?.message).toContain("bun run build")
+      expect(status.error?.message).toContain("@createone999/oud")
     } finally { file.mockRestore() }
     expect((await app.readStatus()).ready).toBe(true)
   })
