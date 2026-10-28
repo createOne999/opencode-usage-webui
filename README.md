@@ -127,6 +127,14 @@ If port 7331 is already in use, change only the plugin option:
 - `build.ts` builds HTML, JS, and CSS with Bun's Tailwind plugin. Assets are served from root-absolute paths so they load after refreshing a session detail URL. CSS is served as a separate local file to preserve the existing CSP.
 - Chart animations are disabled; only short CSS transitions are used, respecting `prefers-reduced-motion`. Motion, React Aria, and reactbits are not added. Aggregation charts have collapsible data tables, and request charts provide links to the corresponding request time.
 
+## Release
+
+CI runs typecheck, build, then tests on pull requests and pushes to `main`, using the frozen Bun lockfile. Publishing runs only when a regular GitHub Release is published (drafts and prereleases are skipped); its tag must exactly match `v<package.json version>`. Versions are never bumped automatically. The workflows use Bun 1.4.2 and Node 24.
+
+For the first release, use Bun 1.4.2 and Node 24, then run `bun install --frozen-lockfile`, `bun run typecheck`, `bun run build`, `bun run test`, and `npm pack --dry-run`. Inspect the package contents to confirm runtime TypeScript files and `dist` are included and no source dependencies are missing. Then run `npm login` and `npm publish` (`publishConfig` sets public access). Publish version `0.1.0` manually; do not publish a `v0.1.0` GitHub Release expecting it to republish that version—npm versions are immutable.
+
+After the first publish, configure npm **Settings → Trusted Publisher → GitHub Actions** for owner `createOne999`, repository `oud`, workflow filename `publish.yml` (filename only), and enable **Allow npm publish**. The workflow uses OIDC; no GitHub npm token is needed. Ensure the workflow is merged to `main`. A new trusted publisher must make its first successful OIDC publish within two days, so configure it when the next release is ready: update `package.json` to a new version (for example, `0.1.1`), sync `bun.lock` if needed, commit and push, then publish a regular GitHub Release tagged `v0.1.1` at that version-bump commit. See [npm trusted publishers](https://docs.npmjs.com/trusted-publishers/). Provenance is automatic only for a public GitHub repository and public package; private repositories can still publish without provenance.
+
 ## Validation
 
 MIT licensed; see [LICENSE](LICENSE).

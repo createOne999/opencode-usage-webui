@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "Local usage dashboard for OpenCode V2",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/createOne999/oud.git"
+  },
   "type": "module",
   "exports": {
     ".": "./index.ts"
