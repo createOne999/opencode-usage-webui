@@ -7,7 +7,7 @@ import { App } from "../web/app"
 import { DailyTokens, StatsView } from "../web/stats"
 import { ContextView, RecordedMessageView } from "../web/sessions"
 import { dailyStatsQueries, dateTime, languageHref, money, number, pageHref, readFilters, requestHref, requestPoints, statsQuery, tokenNumber, totalTokens } from "../web/data"
-import { createI18n } from "../web/i18n"
+import { createI18n, intlLocale, LANGUAGES, localeDir } from "../web/i18n"
 import { api } from "../web/shared"
 import ko from "../web/locales/ko.json"
 import en from "../web/locales/en.json"
@@ -30,7 +30,9 @@ describe("usage pages", () => {
     for (const text of ["Cache read", "Cache write", "Chart data table", "$0.000123"]) expect(english).toContain(text)
     expect(english).not.toContain("캐시 읽기")
     expect(renderToStaticMarkup(<StatsView stats={stats} section="overview" />)).toContain("캐시 읽기")
-    expect(renderToStaticMarkup(<App location={{ pathname: "/stats", search: "?lang=fr" }} />)).toContain('lang="ko"')
+    expect(renderToStaticMarkup(<App location={{ pathname: "/stats", search: "?lang=fr" }} />)).toContain('lang="fr"')
+    expect(renderToStaticMarkup(<App location={{ pathname: "/stats", search: "?lang=ar" }} />)).toContain('dir="rtl"')
+    expect(renderToStaticMarkup(<App location={{ pathname: "/stats", search: "?lang=unsupported" }} />)).toContain('lang="ko"')
   })
 
   test("preserves locale, filters, request selection, cursors and hashes without sending locale to the API", () => {
@@ -54,11 +56,17 @@ describe("usage pages", () => {
 
   test("keeps catalogs complete with matching interpolation variables and English plurals", async () => {
     const normalize = (key: string) => key.replace(/_(one|other)$/, "")
-    expect([...new Set(Object.keys(en).map(normalize))].sort()).toEqual(Object.keys(ko).sort())
-    for (const [key, value] of Object.entries(en)) {
-      const original = ko[normalize(key) as keyof typeof ko]
-      const variables = (text: string) => [...text.matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort()
-      expect(variables(value)).toEqual(variables(original))
+    const expectedKeys = Object.keys(ko).sort()
+    const variables = (text: string) => [...text.matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort()
+    for (const item of LANGUAGES) {
+      const catalog = await Bun.file(new URL(`../web/locales/${item.code}.json`, import.meta.url)).json() as Record<string, string>
+      expect([...new Set(Object.keys(catalog).map(normalize))].sort()).toEqual(expectedKeys)
+      for (const [key, value] of Object.entries(catalog)) {
+        const original = ko[normalize(key) as keyof typeof ko]
+        expect(variables(value)).toEqual(variables(original))
+      }
+      expect(dateTime(500, item.code)).toBe(new Date(500).toLocaleString(intlLocale(item.code)))
+      expect(localeDir(item.code)).toBe(item.code === "ar" ? "rtl" : "ltr")
     }
     for await (const file of new Bun.Glob("*.{ts,tsx}").scan(fileURLToPath(new URL("../web/", import.meta.url)))) {
       const source = await Bun.file(new URL(`../web/${file}`, import.meta.url)).text()

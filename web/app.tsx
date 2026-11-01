@@ -11,7 +11,7 @@ import { Notice, useApi } from "./shared"
 import { StatsPage } from "./stats"
 import { SessionsPage, SessionDetail } from "./sessions"
 import { languageHref, pageHref, readFilters, statsQuery, type Filters, type Projects } from "./data"
-import { createI18n } from "./i18n"
+import { createI18n, LANGUAGES, localeDir } from "./i18n"
 import "./styles.css"
 
 function FiltersForm(props: { filters: Filters; action: string; projects?: Projects }) {
@@ -46,10 +46,11 @@ function Dashboard({ location, filters }: { location: { pathname: string; search
   const section = location.pathname === "/models" ? "models" : location.pathname === "/tools" ? "tools" : "overview"
   const sessions = location.pathname === "/sessions" || !!detail
   const title = detail ? t("세션 · 요청별 컨텍스트") : sessions ? t("세션 탐색") : section === "models" ? t("모델별 사용량") : section === "tools" ? t("도구 사용량") : t("사용량 개요")
-  useEffect(() => { document.documentElement.lang = i18n.resolvedLanguage || i18n.language; document.title = `${title} · OpenCode` }, [title, i18n.language, i18n.resolvedLanguage])
-  return <div lang={i18n.resolvedLanguage || i18n.language}>
+  const activeLang = i18n.resolvedLanguage || i18n.language
+  useEffect(() => { document.documentElement.lang = activeLang; document.documentElement.dir = localeDir(activeLang); document.title = `${title} · OpenCode` }, [title, activeLang])
+  return <div lang={activeLang} dir={localeDir(activeLang)}>
     <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">{t("본문으로 이동")}</a>
-    <div className="border-b bg-card/60"><div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8"><a className="flex items-center gap-2.5 font-semibold tracking-tight" href={pageHref("/stats", filters)}><span className="flex size-8 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ChartNoAxesCombined aria-hidden="true" className="size-4" /></span>OpenCode <span className="font-normal text-muted-foreground">/ usage</span></a><label className="field-label">{t("언어")}<NativeSelect name="lang" size="sm" value={filters.lang} onChange={(event) => window.location.assign(languageHref(location, event.target.value))}><option value="ko" lang="ko">한국어</option><option value="en" lang="en">English</option></NativeSelect></label></div>
+    <div className="border-b bg-card/60"><div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8"><a className="flex items-center gap-2.5 font-semibold tracking-tight" href={pageHref("/stats", filters)}><span className="flex size-8 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary"><ChartNoAxesCombined aria-hidden="true" className="size-4" /></span>OpenCode <span className="font-normal text-muted-foreground">/ usage</span></a><label className="field-label">{t("언어")}<NativeSelect name="lang" size="sm" value={filters.lang} onChange={(event) => window.location.assign(languageHref(location, event.target.value))}>{LANGUAGES.map((item) => <option key={item.code} value={item.code} lang={item.tag}>{item.label}</option>)}</NativeSelect></label></div>
       <nav aria-label={t("주 메뉴")} className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-4 sm:px-8">{[["/stats", t("개요")], ["/models", t("모델")], ["/tools", t("도구")], ["/sessions", t("세션 / 요청")]].map(([path, label]) => <a key={path} href={pageHref(path!, filters)} aria-current={(sessions ? path === "/sessions" : path === location.pathname || (path === "/stats" && location.pathname === "/")) ? "page" : undefined} className="nav-link">{label}</a>)}</nav>
     </div>
     <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-8 sm:py-10">

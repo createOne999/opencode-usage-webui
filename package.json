@@ -19,7 +19,7 @@
     "rpc.ts",
     "status.ts",
     "dist",
-    "README_ko.md"
+    "README.*.md"
   ],
   "scripts": {
     "setup": "bun install && bun run build",
