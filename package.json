@@ -1,0 +1,53 @@
+{
+  "name": "@createone999/oud",
+  "version": "0.1.0",
+  "description": "Local usage dashboard for OpenCode V2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/createOne999/oud.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "server.ts",
+    "history.ts",
+    "open.ts",
+    "rpc.ts",
+    "status.ts",
+    "dist",
+    "README_ko.md"
+  ],
+  "scripts": {
+    "setup": "bun install && bun run build",
+    "build": "bun run build.ts",
+    "status": "bun run status.ts",
+    "test": "bun test ./tests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode/client": "2.2.0",
+    "@opencode/plugin": "2.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "bun-plugin-tailwind": "0.1.2",
+    "class-variance-authority": "0.7.1",
+    "cn": "0.5.0",
+    "i18next": "26.5.11",
+    "lucide-react": "1.62.0",
+    "radix-ui": "1.8.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-i18next": "17.1.9",
+    "react-is": "19.3.1",
+    "recharts": "3.10.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2"
+  }
+}
