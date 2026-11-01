@@ -11,25 +11,18 @@ Run **`/usage-dashboard` in OpenCode Mini or the full TUI** to open the dashboar
 - **Tools:** call status chart and execution-time table
 - **Sessions:** title search, parent/child sessions, per-request context
 
-## Install from GitHub Packages
+## Install from GitHub
 
-After the first GitHub Packages release, configure npm access, then add the plugin to `opencode.json`:
-
-GitHub Packages requires a **personal access token (classic)** with `read:packages`, even for public packages; fine-grained tokens are not supported. Create or update your user-level `.npmrc` (`%USERPROFILE%\.npmrc` on Windows), not the project's `.npmrc`, with the scoped registry and an environment-variable token reference:
-
-```ini
-@createone999:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-```
-
-Set `NODE_AUTH_TOKEN` in the environment of the OpenCode server process as well as any shell that needs npm access. Do not put a real token in this file or override npm's default registry: other packages, including `@opencode` packages, must continue to resolve from npmjs. See [GitHub's npm registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
+After the first successful release workflow, add the prebuilt `release` branch to `opencode.json`:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["@createone999/oud@0.1.0"]
+  "plugins": ["github:createOne999/oud#release"]
 }
 ```
+
+While the repository is private, use `git+ssh://git@github.com/createOne999/oud.git#release` instead, with GitHub SSH access already configured on the PC running the OpenCode server. Once public, the GitHub shortcut above needs no authentication. Neither route requires an npm account, `.npmrc`, or `NODE_AUTH_TOKEN`; public runtime dependencies such as `@opencode/*` are still downloaded from npmjs. See [OpenCode's Git plugin support](https://opencode.ai/v2/docs/plugins#manage).
 
 This uses OpenCode 2.2.0's local shared service. Run `/usage-dashboard` in OpenCode; the actual URL is also logged. The default port is 7331. For multiple projects or a global configuration, set a distinct port (or use `0` to select an available port) to avoid conflicts:
 
@@ -37,12 +30,12 @@ This uses OpenCode 2.2.0's local shared service. Run `/usage-dashboard` in OpenC
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "@createone999/oud@0.1.0", "options": { "port": 7332 } }
+    { "package": "github:createOne999/oud#release", "options": { "port": 7332 } }
   ]
 }
 ```
 
-Use either the npm package or the local source plugin below, not both: they share the plugin ID `local.usage-dashboard`. No global npm install or user build/postinstall step is needed; the package includes prebuilt assets. Until the first GitHub Packages release, use the source setup below.
+Use either the Git-installed plugin or the local source plugin below, not both: they share the plugin ID `local.usage-dashboard`. No global npm install or user build/postinstall step is needed; the release branch includes prebuilt assets. Until the first successful release workflow, use the source setup below.
 
 ## Run from source
 
@@ -138,11 +131,13 @@ If port 7331 is already in use, change only the plugin option:
 
 ## Release
 
-CI runs typecheck, build, then tests on pull requests and pushes to `main`, using the frozen Bun lockfile. Publishing runs only when a regular GitHub Release is published (drafts and prereleases are skipped); its tag must exactly match `v<package.json version>`. Versions are never bumped automatically. The workflows use Bun 1.4.2 and Node 24.
+CI runs typecheck, build, then tests on pull requests and pushes to `main`, using the frozen Bun lockfile. Publishing runs only when a regular GitHub Release is published (drafts and prereleases are skipped); its tag must exactly match `v<package.json version>`. Versions are never bumped automatically. The workflows use Bun 1.4.2.
 
-Push the publishing workflow to `main`, then publish a regular GitHub Release tagged `v<package.json version>` (currently `v0.1.0`) at that commit. The workflow runs checks and publishes to GitHub Packages using its automatic `GITHUB_TOKEN` with `packages: write`; no npm account, npm token, or custom publishing PAT is needed. The first package is private by default. To distribute it publicly, go to the package's **Settings → Change visibility → Public**; this change cannot be reversed.
+Push the publishing workflow to `main`, then publish a regular GitHub Release tagged `v<package.json version>` (currently `v0.1.0`) at that source commit. The workflow runs checks, packs the runtime files and built `dist/` using the `package.json` file list, and creates or updates the `release` branch using its automatic `GITHUB_TOKEN` with `contents: write`. No npm publishing or custom PAT is involved. Repository rules must allow the workflow to push to `release`.
 
-For later releases, bump the version in `package.json`, commit and push the change, then publish a regular GitHub Release with the matching `v<version>` tag at the version-bump commit. See [GitHub's npm registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
+`main` and the source tags remain free of built assets; only `release` contains `dist/`. Do not use a source tag such as `#v0.1.0` as the installed plugin ref. For a fixed deployment, replace `#release` with the full commit hash from the release branch. Deployment commits preserve the previous release history and are never force-pushed.
+
+For later releases, bump the version in `package.json`, commit and push the change, then publish a regular GitHub Release with the matching `v<version>` tag at that source commit. Test the private SSH install in a separate empty project on another PC, without the local `./` plugin, before making the repository public. Public installation then only needs the GitHub plugin entry above.
 
 ## Validation
 

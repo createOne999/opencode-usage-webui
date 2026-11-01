@@ -1,32 +1,29 @@
-name: Publish
+name: Publish release branch
 
 on:
   release:
     types: [published]
+
+concurrency:
+  group: publish-release-branch
+  cancel-in-progress: false
 
 jobs:
   publish:
     if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.release.tag_name }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          registry-url: https://npm.pkg.github.com
-          scope: '@createone999'
-          package-manager-cache: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
       - name: Verify tag matches package version
         run: |
-          version="$(node -p "require('./package.json').version")"
+          version="$(bun -p "require('./package.json').version")"
           if [ "$GITHUB_REF_NAME" != "v$version" ]; then
             echo "::error::Release tag $GITHUB_REF_NAME does not match package version v$version"
             exit 1
@@ -35,6 +32,31 @@ jobs:
       - run: bun run typecheck
       - run: bun run build
       - run: bun run test
-      - run: npm publish
+      - name: Publish prebuilt package to release branch
+        shell: bash
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GIT_INDEX_FILE: ${{ runner.temp }}/oud-release.index
+        run: |
+          bun pm pack --ignore-scripts --filename "$RUNNER_TEMP/oud.tgz"
+          release_dir="$RUNNER_TEMP/oud-release"
+          mkdir -p "$release_dir"
+          tar -xzf "$RUNNER_TEMP/oud.tgz" -C "$release_dir" --strip-components=1
+          test -s "$release_dir/index.ts"
+          test -s "$release_dir/dist/index.html"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          parent=()
+          remote="$(git ls-remote --heads origin refs/heads/release)"
+          if [ -n "$remote" ]; then
+            git fetch --no-tags origin refs/heads/release
+            parent=(-p FETCH_HEAD)
+          fi
+
+          # Stage only the package snapshot without changing the source checkout.
+          git read-tree --empty
+          git --work-tree="$release_dir" add --all --force
+          tree="$(git write-tree)"
+          commit="$(git commit-tree "$tree" "${parent[@]}" -m "Release $RELEASE_TAG")"
+          git push origin "$commit:refs/heads/release"

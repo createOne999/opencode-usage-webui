@@ -21,13 +21,9 @@
     "dist",
     "README_ko.md"
   ],
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "scripts": {
     "setup": "bun install && bun run build",
     "build": "bun run build.ts",
-    "prepack": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && bun run build",
     "status": "bun run status.ts",
     "test": "bun test ./tests",
     "typecheck": "tsc --noEmit"

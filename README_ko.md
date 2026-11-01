@@ -11,25 +11,18 @@ OpenCode V2 서버 플러그인이 **같은 프로세스에서** 제공하는 Re
 - **도구:** 호출 상태 그래프와 실행시간 표
 - **세션:** 제목 검색, 상·하위 세션, 요청별 컨텍스트
 
-## GitHub Packages 설치
+## GitHub에서 설치
 
-첫 GitHub Packages 배포 후 npm 접근을 설정하고 프로젝트의 `opencode.json`에 플러그인을 추가합니다:
-
-GitHub Packages는 공개 패키지에도 `read:packages` 권한이 있는 **personal access token (classic)**을 요구합니다. fine-grained token은 지원하지 않습니다. 프로젝트가 아닌 사용자 홈의 `.npmrc`(Windows: `%USERPROFILE%\.npmrc`)에 범위별 레지스트리와 환경 변수 토큰 참조를 설정하세요:
-
-```ini
-@createone999:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-```
-
-`NODE_AUTH_TOKEN`은 npm을 사용하는 셸뿐 아니라 OpenCode 서버 프로세스 환경에도 설정해야 합니다. 실제 토큰을 파일에 쓰지 말고, npm 기본 레지스트리를 전역 변경하지 마세요. `@opencode` 등 다른 패키지는 계속 npmjs에서 받아야 합니다. 자세한 내용은 [GitHub npm 레지스트리 문서](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)를 참고하세요.
+첫 배포 워크플로 성공 후 빌드 결과가 포함된 `release` 브랜치를 `opencode.json`에 추가합니다:
 
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["@createone999/oud@0.1.0"]
+  "plugins": ["github:createOne999/oud#release"]
 }
 ```
+
+저장소가 비공개인 동안에는 대신 `git+ssh://git@github.com/createOne999/oud.git#release`를 사용하고, OpenCode 서버가 실행되는 PC에 GitHub SSH 접근을 미리 설정하세요. 공개 전환 후에는 위 GitHub 주소만으로 인증 없이 설치할 수 있습니다. 어느 방식도 npm 계정, `.npmrc`, `NODE_AUTH_TOKEN`이 필요하지 않습니다. `@opencode/*` 등 공개 런타임 의존성은 계속 npmjs에서 내려받습니다. [OpenCode의 Git 플러그인 지원](https://opencode.ai/v2/docs/plugins#manage)을 참고하세요.
 
 OpenCode 2.2.0의 로컬 공유 서비스를 사용합니다. OpenCode에서 `/usage-dashboard`를 실행하세요. 실제 접속 주소도 로그에 표시됩니다. 기본 포트는 7331입니다. 여러 프로젝트나 전역 설정에서는 충돌을 피하도록 서로 다른 포트(또는 사용 가능한 포트를 선택하는 `0`)를 지정하세요:
 
@@ -37,12 +30,12 @@ OpenCode 2.2.0의 로컬 공유 서비스를 사용합니다. OpenCode에서 `/u
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "@createone999/oud@0.1.0", "options": { "port": 7332 } }
+    { "package": "github:createOne999/oud#release", "options": { "port": 7332 } }
   ]
 }
 ```
 
-npm 패키지와 아래 로컬 소스 플러그인을 동시에 사용하지 마세요. 두 플러그인의 ID가 `local.usage-dashboard`로 같습니다. 전역 npm 설치나 사용자의 빌드/postinstall 단계는 필요하지 않습니다. 패키지에 빌드된 자산이 포함됩니다. 첫 GitHub Packages 배포 전에는 아래 소스 설정을 사용하세요.
+Git으로 설치한 플러그인과 아래 로컬 소스 플러그인을 동시에 사용하지 마세요. 두 플러그인의 ID가 `local.usage-dashboard`로 같습니다. 전역 npm 설치나 사용자의 빌드/postinstall 단계는 필요하지 않습니다. release 브랜치에 빌드된 자산이 포함됩니다. 첫 배포 워크플로 성공 전에는 아래 소스 설정을 사용하세요.
 
 ## 소스에서 실행
 
@@ -138,11 +131,13 @@ bun run status
 
 ## 배포
 
-CI는 pull request와 `main` 푸시에서 고정 Bun lockfile을 사용해 typecheck → build → test 순서로 실행합니다. 배포는 일반 GitHub Release를 게시할 때만 실행되며(draft와 prerelease 제외), 태그는 `v<package.json 버전>`과 정확히 일치해야 합니다. 버전은 자동으로 올리지 않습니다. 워크플로는 Bun 1.4.2와 Node 24를 사용합니다.
+CI는 pull request와 `main` 푸시에서 고정 Bun lockfile을 사용해 typecheck → build → test 순서로 실행합니다. 배포는 일반 GitHub Release를 게시할 때만 실행되며(draft와 prerelease 제외), 태그는 `v<package.json 버전>`과 정확히 일치해야 합니다. 버전은 자동으로 올리지 않습니다. 워크플로는 Bun 1.4.2를 사용합니다.
 
-배포 워크플로를 `main`에 푸시한 뒤 해당 커밋에서 `v<package.json 버전>`(현재 `v0.1.0`) 태그로 일반 GitHub Release를 게시합니다. 워크플로가 검사를 실행하고 자동 `GITHUB_TOKEN`과 `packages: write` 권한으로 GitHub Packages에 배포합니다. npm 계정, npm 토큰, 별도 배포용 PAT는 필요하지 않습니다. 첫 패키지는 기본적으로 비공개입니다. 공개 배포하려면 패키지 **Settings → Change visibility → Public**에서 공개로 변경하세요. 공개 변경은 되돌릴 수 없습니다.
+배포 워크플로를 `main`에 푸시한 뒤 해당 소스 커밋에서 `v<package.json 버전>`(현재 `v0.1.0`) 태그로 일반 GitHub Release를 게시합니다. 워크플로가 검사를 실행하고, `package.json`의 파일 목록으로 런타임 파일과 빌드된 `dist/`를 묶어 자동 `GITHUB_TOKEN`과 `contents: write` 권한으로 `release` 브랜치를 생성하거나 갱신합니다. npm 게시나 별도 PAT는 사용하지 않습니다. 저장소 규칙에서 워크플로의 `release` 브랜치 푸시를 허용해야 합니다.
 
-이후 배포는 `package.json` 버전을 올려 커밋·푸시한 뒤 해당 버전 변경 커밋에서 일치하는 `v<버전>` 태그의 일반 GitHub Release를 게시합니다. 자세한 내용은 [GitHub npm 레지스트리 문서](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)를 참고하세요.
+`main`과 소스 태그에는 빌드 결과를 커밋하지 않고, `release`에만 `dist/`를 포함합니다. 설치 주소에 `#v0.1.0` 같은 소스 태그를 사용하지 마세요. 특정 배포를 고정하려면 `#release` 대신 release 브랜치의 전체 커밋 해시를 지정하세요. 배포 커밋은 이전 배포 이력을 이어가며 강제 푸시하지 않습니다.
+
+이후 배포는 `package.json` 버전을 올려 커밋·푸시한 뒤 해당 소스 커밋에서 일치하는 `v<버전>` 태그의 일반 GitHub Release를 게시합니다. 공개 전환 전 다른 PC의 별도 빈 프로젝트에서 로컬 `./` 플러그인 없이 비공개 SSH 설치를 확인하세요. 저장소를 공개하면 위 GitHub 플러그인 항목만으로 설치할 수 있습니다.
 
 ## 검증
 
