@@ -3,7 +3,7 @@ import { Service } from "@opencode/client/service"
 import { Plugin } from "@opencode/plugin"
 import { openDashboard } from "./open"
 import { DashboardRpc, type DashboardStatus } from "./rpc"
-import { startDashboard } from "./server"
+import { distAsset, startDashboard } from "./server"
 
 export default Plugin.define({
   id: "local.usage-dashboard",
@@ -37,10 +37,10 @@ export default Plugin.define({
           message: `포트 ${port}을(를) 다른 프로세스가 사용 중입니다. options.port를 바꾸거나 해당 프로세스를 종료한 뒤 플러그인을 다시 로드해 주세요.`,
         },
       }
-      if (!(await Bun.file(new URL("./dist/index.html", import.meta.url)).exists())) return {
+      if (!(await Bun.file(distAsset("index.html")).exists())) return {
         url,
         ready: false,
-        error: { code: "missingBuild", message: "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/oud를 재설치해 주세요." },
+        error: { code: "missingBuild", message: "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/opencode-usage-webui를 재설치해 주세요." },
       }
       return { url, ready: true }
     }

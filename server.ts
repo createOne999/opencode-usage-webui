@@ -1,6 +1,9 @@
 import type { OpenCodeClient, SessionStatsInput } from "@opencode/client"
 import { recordedMessage, requestSummary, sessionSummary } from "./history"
 
+// Source runs as ./server.ts (assets in ./dist); the bundled entrypoint runs as ./dist/index.js.
+export const distAsset = (path: string) => new URL(path, new URL(import.meta.url.endsWith("/dist/index.js") ? "./" : "./dist/", import.meta.url))
+
 export type DashboardClient = {
   session: Pick<OpenCodeClient["session"], "stats" | "list" | "get" | "message">
   message: Pick<OpenCodeClient["message"], "list">
@@ -114,12 +117,12 @@ export function startDashboard(options: Options) {
       }
 
       if (["/", "/stats", "/models", "/tools", "/sessions"].includes(url.pathname) || /^\/sessions\/ses_[\w-]{1,252}$/.test(url.pathname)) {
-        const file = Bun.file(new URL("./dist/index.html", import.meta.url))
-        if (!(await file.exists())) return fail(503, "buildRequired", "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/oud를 재설치해 주세요.")
+        const file = Bun.file(distAsset("index.html"))
+        if (!(await file.exists())) return fail(503, "buildRequired", "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/opencode-usage-webui를 재설치해 주세요.")
         return new Response(file, { headers })
       }
-      if (/^\/[\w.-]+\.(js|css)$/.test(url.pathname)) {
-        const file = Bun.file(new URL(`./dist${url.pathname}`, import.meta.url))
+      if (url.pathname !== "/index.js" && /^\/[\w.-]+\.(js|css)$/.test(url.pathname)) {
+        const file = Bun.file(distAsset(url.pathname.slice(1)))
         if (await file.exists()) return new Response(file, { headers })
       }
       if (url.pathname === "/favicon.ico") return new Response(null, { status: 204, headers })

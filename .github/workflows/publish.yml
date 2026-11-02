@@ -1,8 +1,12 @@
-name: Publish release branch
+name: Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (optional, defaults to v<package.json version>)"
+        required: false
+        type: string
 
 concurrency:
   group: publish-release-branch
@@ -10,47 +14,114 @@ concurrency:
 
 jobs:
   publish:
-    if: ${{ !github.event.release.prerelease && !github.event.release.draft }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.release.tag_name }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
-      - name: Verify tag matches package version
+      - name: Resolve and verify release tag
+        id: tag
+        shell: bash
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
         run: |
           version="$(bun -p "require('./package.json').version")"
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
-            echo "::error::Release tag $GITHUB_REF_NAME does not match package version v$version"
+          tag="$TAG_INPUT"
+          if [ -n "$tag" ]; then
+            case "$tag" in
+              v*) ;;
+              *) tag="v$tag" ;;
+            esac
+            if [ "$tag" != "v$version" ]; then
+              echo "::error::Release tag $tag does not match package version v$version"
+              exit 1
+            fi
+          else
+            tag="v$version"
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "::error::Release tag $tag already exists"
             exit 1
           fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run build
       - run: bun run test
       - name: Publish prebuilt package to release branch
+        id: publish
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          GIT_INDEX_FILE: ${{ runner.temp }}/oud-release.index
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          GIT_INDEX_FILE: ${{ runner.temp }}/release.index
         run: |
-          bun pm pack --ignore-scripts --filename "$RUNNER_TEMP/oud.tgz"
-          release_dir="$RUNNER_TEMP/oud-release"
-          mkdir -p "$release_dir"
-          tar -xzf "$RUNNER_TEMP/oud.tgz" -C "$release_dir" --strip-components=1
+          release_dir="$RUNNER_TEMP/release-package"
+          rm -rf "$release_dir" && mkdir -p "$release_dir"
+          cp -r dist "$release_dir/dist"
+          cp LICENSE "$release_dir/LICENSE"
+
+          cat > "$release_dir/README.md" <<'README'
+          # OpenCode Usage Dashboard
+
+          A lightweight local web dashboard for **OpenCode V2** that shows token usage, model costs, tool performance, and per-request session context in your browser.
+
+          ## Quick Start
+
+          Add the plugin to your `opencode.json`:
+
+          ```json
+          {
+            "$schema": "https://opencode.ai/config.json",
+            "plugins": ["github:createOne999/opencode-usage-webui#release"]
+          }
+          ```
+
+          Then run **`/usage-dashboard`** inside OpenCode, or open <http://127.0.0.1:7331/stats> directly.
+
+          ### Customizing the Port
+
+          The default port is `7331`. Set `options.port` to use a different port (`0` picks any available port):
+
+          ```json
+          {
+            "$schema": "https://opencode.ai/config.json",
+            "plugins": [
+              { "package": "github:createOne999/opencode-usage-webui#release", "options": { "port": 7332 } }
+            ]
+          }
+          ```
+
+          ## Documentation & Source
+
+          Full multilingual documentation and source development instructions are on the [`main` branch](https://github.com/createOne999/opencode-usage-webui/tree/main).
+
+          ## License
+
+          [MIT](./LICENSE)
+          README
+
           bun -e '
-            const file = Bun.file(process.argv[1])
-            const pkg = await file.json()
-            delete pkg.scripts
-            delete pkg.devDependencies
-            await Bun.write(file, JSON.stringify(pkg, null, 2) + "\n")
+            const pkg = await Bun.file("./package.json").json()
+            const out = {}
+            for (const key of ["name", "version", "description", "license", "repository", "type"]) {
+              out[key] = pkg[key]
+            }
+            out.exports = { ".": "./dist/index.js" }
+            out.files = ["dist", "README.md", "LICENSE"]
+            out.dependencies = pkg.dependencies
+            await Bun.write(process.argv[1], JSON.stringify(out, null, 2) + "\n")
           ' "$release_dir/package.json"
-          test -s "$release_dir/index.ts"
+
+          test -s "$release_dir/dist/index.js"
           test -s "$release_dir/dist/index.html"
+          test -s "$release_dir/README.md"
+          test -s "$release_dir/LICENSE"
+          test -s "$release_dir/package.json"
+          test -z "$(find "$release_dir" -name '*.ts' -o -name '*.tsx')"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -67,3 +138,12 @@ jobs:
           tree="$(git write-tree)"
           commit="$(git commit-tree "$tree" "${parent[@]}" -m "Release $RELEASE_TAG")"
           git push origin "$commit:refs/heads/release"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          RELEASE_COMMIT: ${{ steps.publish.outputs.commit }}
+        run: |
+          gh release create "$RELEASE_TAG" --target "$RELEASE_COMMIT" --title "$RELEASE_TAG" --generate-notes

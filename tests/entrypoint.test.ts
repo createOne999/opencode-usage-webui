@@ -60,6 +60,10 @@ describe("plugin entrypoint", () => {
     expect(status.ready).toBe(true)
     expect(status.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/stats$/)
     expect((await fetch(status.url)).status).toBe(200)
+
+    const bundled = (await import(new URL("../dist/index.js", import.meta.url).href)).default as typeof plugin
+    const builtCleanup = await bundled.setup({ ...({ options: { port: 0 }, location: { directory: "D:/project", project: { id: "current-project" } }, command: { transform: async () => ({ dispose: async () => {} }) }, rpc: { register: async (_value: unknown, handlers: { info: () => Promise<DashboardStatus> }) => { expect((await (await fetch((await handlers.info()).url)).text())).toContain('id="root"'); return { dispose: async () => {}, events: { emit: async () => {} } } } } }) } as unknown as SetupContext)
+    if (builtCleanup) cleanups.push(builtCleanup)
   })
 
   test("keeps the command and RPC available when the port is occupied", async () => {
@@ -145,7 +149,7 @@ describe("plugin entrypoint", () => {
       const status = await app.readStatus()
       expect(status.ready).toBe(false)
       expect(status.error?.code).toBe("missingBuild")
-      expect(status.error?.message).toContain("@createone999/oud")
+      expect(status.error?.message).toContain("@createone999/opencode-usage-webui")
     } finally { file.mockRestore() }
     expect((await app.readStatus()).ready).toBe(true)
   })

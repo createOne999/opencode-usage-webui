@@ -46,6 +46,7 @@ describe("read-only dashboard server", () => {
       expect(html).not.toContain("<style")
     }
     expect((await request(server, "/server.ts")).status).toBe(404)
+    expect((await request(server, "/index.js")).status).toBe(404)
     expect((await request(server, "/%2e%2e%2fpackage.json")).status).toBe(404)
   })
 
