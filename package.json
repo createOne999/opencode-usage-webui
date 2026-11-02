@@ -1,25 +1,20 @@
 {
-  "name": "@createone999/oud",
-  "version": "0.2.1",
+  "name": "@createone999/opencode-usage-webui",
+  "version": "0.3.0",
   "description": "Local usage dashboard for OpenCode V2",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/createOne999/oud.git"
+    "url": "git+https://github.com/createOne999/opencode-usage-webui.git"
   },
   "type": "module",
   "exports": {
-    ".": "./index.ts"
+    ".": "./dist/index.js"
   },
   "files": [
-    "index.ts",
-    "server.ts",
-    "history.ts",
-    "open.ts",
-    "rpc.ts",
-    "status.ts",
     "dist",
-    "README.*.md"
+    "README.md",
+    "LICENSE"
   ],
   "dependencies": {
     "@opencode/client": "2.2.0",
