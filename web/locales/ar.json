@@ -18,7 +18,7 @@
   "errors.selectStep": "يرجى اختيار خطوة نموذج.",
   "errors.staleRequest": "تغير موضع الطلب أو أن مؤشر السجل غير صالح. حدّث قائمة الطلبات ثم اختر مجددًا.",
   "errors.upstreamFailure": "فشل الاستعلام من OpenCode. تحقق من حالة الخدمة ثم حاول مجددًا.",
-  "errors.buildRequired": "ملفات لوحة المعلومات مفقودة. شغّل /reload في OpenCode أو أعد تثبيت @createone999/oud.",
+  "errors.buildRequired": "ملفات لوحة المعلومات مفقودة. شغّل /reload في OpenCode أو أعد تثبيت @createone999/opencode-usage-webui.",
   "history.user": "المستخدم",
   "history.assistant": "الاستجابة · {{model}}",
   "history.system": "تغيير التعليمات المحفوظة",

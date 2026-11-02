@@ -18,7 +18,7 @@
   "errors.selectStep": "Wähle einen Modell-Step aus.",
   "errors.staleRequest": "Die Position der Anfrage hat sich geändert oder der Verlaufszeiger ist ungültig. Aktualisiere die Anfrageliste und wähle erneut aus.",
   "errors.upstreamFailure": "Die OpenCode-Abfrage ist fehlgeschlagen. Prüfe den Dienststatus und versuche es erneut.",
-  "errors.buildRequired": "Dashboard-Dateien fehlen. Führe /reload in OpenCode aus oder installiere @createone999/oud erneut.",
+  "errors.buildRequired": "Dashboard-Dateien fehlen. Führe /reload in OpenCode aus oder installiere @createone999/opencode-usage-webui erneut.",
   "history.user": "Nutzer",
   "history.assistant": "Antwort · {{model}}",
   "history.system": "Änderung gespeicherter Anweisungen",

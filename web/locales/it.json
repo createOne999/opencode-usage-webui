@@ -18,7 +18,7 @@
   "errors.selectStep": "Seleziona uno Step del modello.",
   "errors.staleRequest": "La posizione della richiesta è cambiata o il cursore della cronologia non è valido. Aggiorna l'elenco delle richieste e seleziona di nuovo.",
   "errors.upstreamFailure": "La richiesta a OpenCode non è riuscita. Controlla lo stato del servizio e riprova.",
-  "errors.buildRequired": "I file della dashboard non sono presenti. Esegui /reload in OpenCode o reinstalla @createone999/oud.",
+  "errors.buildRequired": "I file della dashboard non sono presenti. Esegui /reload in OpenCode o reinstalla @createone999/opencode-usage-webui.",
   "history.user": "Utente",
   "history.assistant": "Risposta · {{model}}",
   "history.system": "Modifica delle istruzioni salvate",

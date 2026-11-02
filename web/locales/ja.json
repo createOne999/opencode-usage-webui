@@ -18,7 +18,7 @@
   "errors.selectStep": "モデルのStepを選択してください。",
   "errors.staleRequest": "リクエストの位置が変わったか、履歴カーソルが無効です。リクエスト一覧を更新して、もう一度選択してください。",
   "errors.upstreamFailure": "OpenCodeへの問い合わせに失敗しました。サービスの状態を確認して、もう一度お試しください。",
-  "errors.buildRequired": "ダッシュボードのファイルがありません。OpenCodeで/reloadを実行するか、@createone999/oudを再インストールしてください。",
+  "errors.buildRequired": "ダッシュボードのファイルがありません。OpenCodeで/reloadを実行するか、@createone999/opencode-usage-webuiを再インストールしてください。",
   "history.user": "ユーザー",
   "history.assistant": "応答 · {{model}}",
   "history.system": "保存済み指示の変更",

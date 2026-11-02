@@ -18,7 +18,7 @@
   "errors.selectStep": "Select a model step.",
   "errors.staleRequest": "The request position changed or the history cursor is invalid. Refresh the request list and select again.",
   "errors.upstreamFailure": "OpenCode query failed. Check the service status and try again.",
-  "errors.buildRequired": "Dashboard files are missing. Run /reload in OpenCode or reinstall @createone999/oud.",
+  "errors.buildRequired": "Dashboard files are missing. Run /reload in OpenCode or reinstall @createone999/opencode-usage-webui.",
   "history.user": "User",
   "history.assistant": "Response · {{model}}",
   "history.system": "Saved instruction change",

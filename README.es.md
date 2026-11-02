@@ -43,7 +43,7 @@ Añade el complemento a tu `opencode.json`:
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["github:createOne999/oud#release"]
+  "plugins": ["github:createOne999/opencode-usage-webui#release"]
 }
 ```
 
@@ -57,7 +57,7 @@ El puerto predeterminado es `7331`. Si ejecutas varios proyectos a la vez o quie
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "github:createOne999/oud#release", "options": { "port": 7332 } }
+    { "package": "github:createOne999/opencode-usage-webui#release", "options": { "port": 7332 } }
   ]
 }
 ```

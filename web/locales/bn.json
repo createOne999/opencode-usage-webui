@@ -18,7 +18,7 @@
   "errors.selectStep": "একটি মডেল Step নির্বাচন করুন।",
   "errors.staleRequest": "অনুরোধের অবস্থান বদলেছে অথবা ইতিহাসের কার্সরটি অবৈধ। অনুরোধের তালিকা রিফ্রেশ করে আবার নির্বাচন করুন।",
   "errors.upstreamFailure": "OpenCode-এ অনুসন্ধান ব্যর্থ হয়েছে। সার্ভিসের অবস্থা দেখে আবার চেষ্টা করুন।",
-  "errors.buildRequired": "ড্যাশবোর্ডের ফাইল নেই। OpenCode-এ /reload চালান অথবা @createone999/oud পুনরায় ইনস্টল করুন।",
+  "errors.buildRequired": "ড্যাশবোর্ডের ফাইল নেই। OpenCode-এ /reload চালান অথবা @createone999/opencode-usage-webui পুনরায় ইনস্টল করুন।",
   "history.user": "ব্যবহারকারী",
   "history.assistant": "উত্তর · {{model}}",
   "history.system": "সংরক্ষিত নির্দেশনা পরিবর্তন",

@@ -18,7 +18,7 @@
   "errors.selectStep": "Selecciona un Step del modelo.",
   "errors.staleRequest": "La posición de la solicitud cambió o el cursor del historial no es válido. Actualiza la lista de solicitudes y vuelve a seleccionar.",
   "errors.upstreamFailure": "Falló la consulta a OpenCode. Comprueba el estado del servicio y vuelve a intentarlo.",
-  "errors.buildRequired": "Faltan los archivos del panel. Ejecuta /reload en OpenCode o vuelve a instalar @createone999/oud.",
+  "errors.buildRequired": "Faltan los archivos del panel. Ejecuta /reload en OpenCode o vuelve a instalar @createone999/opencode-usage-webui.",
   "history.user": "Usuario",
   "history.assistant": "Respuesta · {{model}}",
   "history.system": "Cambio de instrucciones guardadas",

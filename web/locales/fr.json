@@ -18,7 +18,7 @@
   "errors.selectStep": "Sélectionnez un Step du modèle.",
   "errors.staleRequest": "La position de la requête a changé ou le curseur de l’historique est invalide. Actualisez la liste des requêtes, puis sélectionnez-en une à nouveau.",
   "errors.upstreamFailure": "La requête OpenCode a échoué. Vérifiez l’état du service et réessayez.",
-  "errors.buildRequired": "Les fichiers du tableau de bord sont absents. Exécutez /reload dans OpenCode ou réinstallez @createone999/oud.",
+  "errors.buildRequired": "Les fichiers du tableau de bord sont absents. Exécutez /reload dans OpenCode ou réinstallez @createone999/opencode-usage-webui.",
   "history.user": "Utilisateur",
   "history.assistant": "Réponse · {{model}}",
   "history.system": "Modification des instructions enregistrées",

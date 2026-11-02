@@ -18,7 +18,7 @@
   "errors.selectStep": "모델 Step을 선택해 주세요.",
   "errors.staleRequest": "요청 위치가 바뀌었거나 이력 커서가 맞지 않습니다. 요청 목록을 새로고침한 뒤 다시 선택해 주세요.",
   "errors.upstreamFailure": "OpenCode 조회에 실패했습니다. 서비스 상태를 확인한 뒤 다시 시도해 주세요.",
-  "errors.buildRequired": "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/oud를 재설치해 주세요.",
+  "errors.buildRequired": "대시보드 파일이 없습니다. OpenCode에서 /reload를 실행하거나 @createone999/opencode-usage-webui를 재설치해 주세요.",
   "history.user": "사용자",
   "history.assistant": "응답 · {{model}}",
   "history.system": "저장된 지침 변경",

@@ -18,7 +18,7 @@
   "errors.selectStep": "Wybierz Steps modelu.",
   "errors.staleRequest": "Pozycja żądania uległa zmianie lub kursor historii jest nieprawidłowy. Odśwież listę żądań i wybierz ponownie.",
   "errors.upstreamFailure": "Zapytanie do OpenCode nie powiodło się. Sprawdź stan usługi i spróbuj ponownie.",
-  "errors.buildRequired": "Brakuje plików panelu. Uruchom /reload w OpenCode lub zainstaluj ponownie @createone999/oud.",
+  "errors.buildRequired": "Brakuje plików panelu. Uruchom /reload w OpenCode lub zainstaluj ponownie @createone999/opencode-usage-webui.",
   "history.user": "Użytkownik",
   "history.assistant": "Odpowiedź · {{model}}",
   "history.system": "Zmiana zapisanych instrukcji",

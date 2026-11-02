@@ -43,7 +43,7 @@ Dodaj wtyczkę do pliku `opencode.json`:
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["github:createOne999/oud#release"]
+  "plugins": ["github:createOne999/opencode-usage-webui#release"]
 }
 ```
 
@@ -57,7 +57,7 @@ Domyślny port to `7331`. Jeśli uruchamiasz jednocześnie wiele projektów lub 
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "github:createOne999/oud#release", "options": { "port": 7332 } }
+    { "package": "github:createOne999/opencode-usage-webui#release", "options": { "port": 7332 } }
   ]
 }
 ```

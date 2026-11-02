@@ -18,7 +18,7 @@
   "errors.selectStep": "Επιλέξτε ένα βήμα μοντέλου.",
   "errors.staleRequest": "Η θέση του αιτήματος άλλαξε ή ο δείκτης ιστορικού δεν είναι έγκυρος. Ανανεώστε τη λίστα αιτημάτων και επιλέξτε ξανά.",
   "errors.upstreamFailure": "Η αναζήτηση στο OpenCode απέτυχε. Ελέγξτε την κατάσταση της υπηρεσίας και δοκιμάστε ξανά.",
-  "errors.buildRequired": "Λείπουν τα αρχεία του πίνακα ελέγχου. Εκτελέστε /reload στο OpenCode ή εγκαταστήστε ξανά το @createone999/oud.",
+  "errors.buildRequired": "Λείπουν τα αρχεία του πίνακα ελέγχου. Εκτελέστε /reload στο OpenCode ή εγκαταστήστε ξανά το @createone999/opencode-usage-webui.",
   "history.user": "Χρήστης",
   "history.assistant": "Απάντηση · {{model}}",
   "history.system": "Αλλαγή αποθηκευμένης οδηγίας",

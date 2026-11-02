@@ -18,7 +18,7 @@
   "errors.selectStep": "เลือก Steps ของโมเดล",
   "errors.staleRequest": "ตำแหน่งคำขอเปลี่ยนไปหรือเคอร์เซอร์ประวัติไม่ถูกต้อง โปรดรีเฟรชรายการคำขอแล้วเลือกอีกครั้ง",
   "errors.upstreamFailure": "ค้นหาข้อมูลจาก OpenCode ไม่สำเร็จ ตรวจสอบสถานะบริการแล้วลองอีกครั้ง",
-  "errors.buildRequired": "ไม่พบไฟล์แดชบอร์ด โปรดเรียกใช้ /reload ใน OpenCode หรือติดตั้ง @createone999/oud ใหม่",
+  "errors.buildRequired": "ไม่พบไฟล์แดชบอร์ด โปรดเรียกใช้ /reload ใน OpenCode หรือติดตั้ง @createone999/opencode-usage-webui ใหม่",
   "history.user": "ผู้ใช้",
   "history.assistant": "การตอบกลับ · {{model}}",
   "history.system": "เปลี่ยนคำสั่งที่บันทึกไว้",

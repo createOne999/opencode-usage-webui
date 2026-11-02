@@ -18,7 +18,7 @@
   "errors.selectStep": "Bir model Steps seçin.",
   "errors.staleRequest": "İstek konumu değişti veya geçmiş imleci geçersiz. İstek listesini yenileyip yeniden seçin.",
   "errors.upstreamFailure": "OpenCode sorgusu başarısız oldu. Hizmet durumunu kontrol edip yeniden deneyin.",
-  "errors.buildRequired": "Pano dosyaları eksik. OpenCode'da /reload çalıştırın veya @createone999/oud paketini yeniden yükleyin.",
+  "errors.buildRequired": "Pano dosyaları eksik. OpenCode'da /reload çalıştırın veya @createone999/opencode-usage-webui paketini yeniden yükleyin.",
   "history.user": "Kullanıcı",
   "history.assistant": "Yanıt · {{model}}",
   "history.system": "Kaydedilmiş talimat değişikliği",

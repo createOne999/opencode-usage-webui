@@ -18,7 +18,7 @@
   "errors.selectStep": "Odaberite korak modela.",
   "errors.staleRequest": "Položaj zahtjeva se promijenio ili je pokazivač historije nevažeći. Osvježite listu zahtjeva i odaberite ponovo.",
   "errors.upstreamFailure": "Upit OpenCode nije uspio. Provjerite status usluge i pokušajte ponovo.",
-  "errors.buildRequired": "Nedostaju datoteke kontrolne table. Pokrenite /reload u OpenCodeu ili ponovo instalirajte @createone999/oud.",
+  "errors.buildRequired": "Nedostaju datoteke kontrolne table. Pokrenite /reload u OpenCodeu ili ponovo instalirajte @createone999/opencode-usage-webui.",
   "history.user": "Korisnik",
   "history.assistant": "Odgovor · {{model}}",
   "history.system": "Promjena sačuvanih uputa",

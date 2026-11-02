@@ -18,7 +18,7 @@
   "errors.selectStep": "請選擇模型 Step。",
   "errors.staleRequest": "請求位置已變更，或歷史記錄游標無效。請重新整理請求清單後再選擇。",
   "errors.upstreamFailure": "OpenCode 查詢失敗。請確認服務狀態後再試一次。",
-  "errors.buildRequired": "找不到儀表板檔案。請在 OpenCode 中執行 /reload，或重新安裝 @createone999/oud。",
+  "errors.buildRequired": "找不到儀表板檔案。請在 OpenCode 中執行 /reload，或重新安裝 @createone999/opencode-usage-webui。",
   "history.user": "使用者",
   "history.assistant": "回應 · {{model}}",
   "history.system": "已儲存指示變更",

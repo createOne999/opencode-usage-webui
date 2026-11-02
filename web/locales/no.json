@@ -18,7 +18,7 @@
   "errors.selectStep": "Velg et modelltrinn.",
   "errors.staleRequest": "Forespørselsposisjonen er endret, eller historikkmarkøren er ugyldig. Oppdater forespørselslisten og velg på nytt.",
   "errors.upstreamFailure": "OpenCode-forespørselen mislyktes. Kontroller tjenestestatusen og prøv igjen.",
-  "errors.buildRequired": "Dashbordfilene mangler. Kjør /reload i OpenCode eller installer @createone999/oud på nytt.",
+  "errors.buildRequired": "Dashbordfilene mangler. Kjør /reload i OpenCode eller installer @createone999/opencode-usage-webui på nytt.",
   "history.user": "Bruker",
   "history.assistant": "Svar · {{model}}",
   "history.system": "Endring av lagret instruksjon",

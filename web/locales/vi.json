@@ -18,7 +18,7 @@
   "errors.selectStep": "Hãy chọn một Step của mô hình.",
   "errors.staleRequest": "Vị trí yêu cầu đã thay đổi hoặc con trỏ lịch sử không hợp lệ. Hãy làm mới danh sách yêu cầu rồi chọn lại.",
   "errors.upstreamFailure": "Truy vấn OpenCode thất bại. Hãy kiểm tra trạng thái dịch vụ rồi thử lại.",
-  "errors.buildRequired": "Thiếu các tệp của bảng điều khiển. Hãy chạy /reload trong OpenCode hoặc cài đặt lại @createone999/oud.",
+  "errors.buildRequired": "Thiếu các tệp của bảng điều khiển. Hãy chạy /reload trong OpenCode hoặc cài đặt lại @createone999/opencode-usage-webui.",
   "history.user": "Người dùng",
   "history.assistant": "Phản hồi · {{model}}",
   "history.system": "Thay đổi chỉ dẫn đã lưu",

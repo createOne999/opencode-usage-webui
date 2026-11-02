@@ -43,7 +43,7 @@ OpenCode Mini 또는 전체 TUI에서 언제든 **`/usage-dashboard`** 명령을
 ```json
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["github:createOne999/oud#release"]
+  "plugins": ["github:createOne999/opencode-usage-webui#release"]
 }
 ```
 
@@ -57,7 +57,7 @@ OpenCode Mini 또는 전체 TUI에서 언제든 **`/usage-dashboard`** 명령을
 {
   "$schema": "https://opencode.ai/config.json",
   "plugins": [
-    { "package": "github:createOne999/oud#release", "options": { "port": 7332 } }
+    { "package": "github:createOne999/opencode-usage-webui#release", "options": { "port": 7332 } }
   ]
 }
 ```

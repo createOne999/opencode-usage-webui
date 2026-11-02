@@ -18,7 +18,7 @@
   "errors.selectStep": "请选择一个模型 Step。",
   "errors.staleRequest": "请求位置已更改或历史记录游标无效。请刷新请求列表后重新选择。",
   "errors.upstreamFailure": "OpenCode 查询失败。请检查服务状态后重试。",
-  "errors.buildRequired": "缺少仪表板文件。请在 OpenCode 中运行 /reload，或重新安装 @createone999/oud。",
+  "errors.buildRequired": "缺少仪表板文件。请在 OpenCode 中运行 /reload，或重新安装 @createone999/opencode-usage-webui。",
   "history.user": "用户",
   "history.assistant": "响应 · {{model}}",
   "history.system": "已保存指令的变更",

@@ -18,7 +18,7 @@
   "errors.selectStep": "Vælg et modeltrin.",
   "errors.staleRequest": "Anmodningens placering er ændret, eller historikmarkøren er ugyldig. Opdater listen over anmodninger, og vælg igen.",
   "errors.upstreamFailure": "Forespørgslen til OpenCode mislykkedes. Kontrollér tjenestens status, og prøv igen.",
-  "errors.buildRequired": "Dashboardfiler mangler. Kør /reload i OpenCode, eller geninstallér @createone999/oud.",
+  "errors.buildRequired": "Dashboardfiler mangler. Kør /reload i OpenCode, eller geninstallér @createone999/opencode-usage-webui.",
   "history.user": "Bruger",
   "history.assistant": "Svar · {{model}}",
   "history.system": "Ændring af gemte instruktioner",

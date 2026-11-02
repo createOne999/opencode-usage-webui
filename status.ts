@@ -7,7 +7,7 @@ export async function runStatus(directory = process.cwd()) {
   const endpoint = await Service.discover({ version: (version) => version.startsWith("2.") }).catch(() => undefined)
   if (!endpoint) {
     console.error("error: serviceUnavailable")
-    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/oud를 재설치한 뒤 다시 시도해 주세요.")
+    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/opencode-usage-webui를 재설치한 뒤 다시 시도해 주세요.")
     return 1
   }
 
@@ -32,7 +32,7 @@ export async function runStatus(directory = process.cwd()) {
     return 1
   } catch {
     console.error("error: serviceUnavailable")
-    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/oud를 재설치한 뒤 다시 시도해 주세요.")
+    console.error("action: 프로젝트 디렉터리에서 OpenCode를 실행하고 플러그인이 누락되었으면 /reload하거나 @createone999/opencode-usage-webui를 재설치한 뒤 다시 시도해 주세요.")
     return 1
   }
 }

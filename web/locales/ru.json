@@ -18,7 +18,7 @@
   "errors.selectStep": "Выберите шаг модели.",
   "errors.staleRequest": "Позиция запроса изменилась или указатель истории недействителен. Обновите список запросов и выберите запрос снова.",
   "errors.upstreamFailure": "Не удалось выполнить запрос OpenCode. Проверьте состояние службы и повторите попытку.",
-  "errors.buildRequired": "Файлы панели отсутствуют. Выполните /reload в OpenCode или переустановите @createone999/oud.",
+  "errors.buildRequired": "Файлы панели отсутствуют. Выполните /reload в OpenCode или переустановите @createone999/opencode-usage-webui.",
   "history.user": "Пользователь",
   "history.assistant": "Ответ · {{model}}",
   "history.system": "Изменение сохранённых инструкций",

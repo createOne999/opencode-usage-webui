@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@createone999/oud",
+      "name": "@createone999/opencode-usage-webui",
       "dependencies": {
         "@opencode/client": "2.2.0",
         "@opencode/plugin": "2.2.0",
