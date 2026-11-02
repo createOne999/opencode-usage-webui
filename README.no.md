@@ -29,6 +29,8 @@ Et lett lokalt webdashboard for **OpenCode V2** som hjelper deg med å utforske 
 
 Kjør **`/usage-dashboard`** i OpenCode Mini eller hele TUI-et når du vil åpne dashbordet. Det kjører i OpenCode-pluginprosessen uten behov for en ekstra database eller bakgrunnsprosess.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Dette kan du utforske
 
 - **Oversikt (`/stats`):** Totalt antall tokener, registrert kostnad i USD, økter, modelltrinn, daglig aktivitet, tokendeling og daglige tokenutviklinger ved behov.

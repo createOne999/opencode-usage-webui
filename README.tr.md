@@ -29,6 +29,8 @@
 
 Panoyu açmak istediğinizde OpenCode Mini veya tam TUI içinde **`/usage-dashboard`** komutunu çalıştırın. Ek bir veritabanına veya arka plan servisine ihtiyaç duymadan OpenCode eklenti süreci içinde çalışır.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Neleri keşfedebilirsiniz
 
 - **Genel bakış (`/stats`):** Toplam token, kaydedilen USD maliyeti, oturumlar, model Steps, günlük etkinlik, token dökümü ve isteğe bağlı günlük token eğilimleri.

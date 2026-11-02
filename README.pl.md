@@ -29,6 +29,8 @@ Lekkie, lokalne zestawienie internetowe dla **OpenCode V2**, które pozwala anal
 
 Aby otworzyć panel, uruchom **`/usage-dashboard`** w OpenCode Mini lub pełnym TUI. Działa on w procesie wtyczki OpenCode i nie wymaga dodatkowej bazy danych ani demona działającego w tle.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Co możesz sprawdzić
 
 - **Przegląd (`/stats`):** Łączna liczba tokenów, zarejestrowany koszt w USD, sesje, Steps modeli, aktywność dzienna, podział tokenów oraz trendy dzienne wczytywane na żądanie.

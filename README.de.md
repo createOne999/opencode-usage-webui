@@ -29,6 +29,8 @@ Ein leichtgewichtiges lokales Web-Dashboard für **OpenCode V2**, mit dem du Tok
 
 Führe **`/usage-dashboard`** in OpenCode Mini oder der vollständigen TUI aus, wann immer du das Dashboard öffnen möchtest. Es läuft im OpenCode-Plugin-Prozess und benötigt weder eine zusätzliche Datenbank noch einen Hintergrunddienst.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Was du entdecken kannst
 
 - **Übersicht (`/stats`):** Token gesamt, erfasste Kosten in USD, Sitzungen, Modell-Steps, tägliche Aktivität, Token-Aufschlüsselung und tägliche Token-Trends auf Abruf.

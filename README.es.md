@@ -29,6 +29,8 @@ Un panel web local y ligero para **OpenCode V2** que te permite explorar el uso 
 
 Ejecuta **`/usage-dashboard`** en OpenCode Mini o en la TUI completa cuando quieras abrir el panel. Se ejecuta dentro del proceso del complemento de OpenCode y no requiere una base de datos ni un servicio en segundo plano adicionales.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Qué puedes explorar
 
 - **Resumen (`/stats`):** Tokens totales, coste registrado en USD, sesiones, Steps de modelos, actividad diaria, desglose de tokens y tendencias diarias de tokens bajo demanda.

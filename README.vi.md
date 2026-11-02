@@ -29,6 +29,8 @@ Bảng điều khiển web cục bộ gọn nhẹ dành cho **OpenCode V2**, gi�
 
 Chạy **`/usage-dashboard`** trong OpenCode Mini hoặc TUI đầy đủ để mở bảng điều khiển bất cứ lúc nào. Bảng chạy trong tiến trình plugin OpenCode, không cần cơ sở dữ liệu hay dịch vụ nền bổ sung.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Nội dung có thể khám phá
 
 - **Tổng quan (`/stats`):** Tổng token, chi phí USD đã ghi nhận, số phiên, Steps mô hình, hoạt động hằng ngày, phân tích token và xu hướng token theo ngày khi cần.

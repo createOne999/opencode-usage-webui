@@ -29,6 +29,8 @@ A lightweight local web dashboard for **OpenCode V2** that helps you explore you
 
 Run **`/usage-dashboard`** in OpenCode Mini or the full TUI whenever you want to open the dashboard. It runs inside the OpenCode plugin process with no extra database or background daemon required.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## What You Can Explore
 
 - **Overview (`/stats`):** Total tokens, recorded USD cost, sessions, model steps, daily activity, token breakdown, and on-demand daily token trends.

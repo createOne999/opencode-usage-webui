@@ -29,6 +29,8 @@ Un tableau de bord web local et léger pour **OpenCode V2**, qui vous permet d�
 
 Exécutez **`/usage-dashboard`** dans OpenCode Mini ou dans la TUI complète pour ouvrir le tableau de bord. Il s’exécute dans le processus du plug-in OpenCode, sans base de données supplémentaire ni démon en arrière-plan.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Ce que vous pouvez explorer
 
 - **Vue d’ensemble (`/stats`) :** nombre total de tokens, coût enregistré en USD, sessions, Steps des modèles, activité quotidienne, répartition des tokens et tendances journalières des tokens à la demande.

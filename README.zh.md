@@ -29,6 +29,8 @@
 
 在 OpenCode Mini 或完整 TUI 中运行 **`/usage-dashboard`**，即可随时打开仪表板。它运行在 OpenCode 插件进程中，无需额外的数据库或后台守护进程。
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## 可查看的内容
 
 - **概览（`/stats`）：** 令牌总数、记录的 USD 成本、会话数、模型 Steps、每日活动、令牌明细，以及按需加载的每日令牌趋势。

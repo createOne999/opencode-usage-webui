@@ -29,6 +29,8 @@
 
 在 OpenCode Mini 或完整 TUI 中執行 **`/usage-dashboard`**，即可開啟儀表板。儀表板會在 OpenCode 外掛程序中執行，不需要額外的資料庫或背景常駐程式。
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## 可查看的內容
 
 - **總覽（`/stats`）：** 權杖總數、記錄的 USD 成本、工作階段數、模型 Steps、每日活動、權杖組成，以及依需求載入的每日權杖趨勢。

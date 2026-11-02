@@ -29,6 +29,8 @@ Lagana lokalna web-kontrolna tabla za **OpenCode V2** koja vam omogućava da u p
 
 Pokrenite **`/usage-dashboard`** u OpenCode Mini ili punom TUI-ju kad god želite otvoriti kontrolnu tablu. Radi unutar procesa dodatka OpenCode, bez potrebe za dodatnom bazom podataka ili pozadinskim servisom.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## Šta možete pregledati
 
 - **Pregled (`/stats`):** Ukupan broj tokena, zabilježeni trošak u USD, sesije, koraci modela, dnevna aktivnost, sastav tokena i trendovi dnevne upotrebe tokena na zahtjev.

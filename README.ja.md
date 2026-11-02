@@ -29,6 +29,8 @@ OpenCode V2 向けの軽量なローカルWebダッシュボードです。ブ�
 
 OpenCode Mini またはフルTUIで **`/usage-dashboard`** を実行すると、いつでもダッシュボードを開けます。OpenCodeプラグインプロセス内で動作し、追加のデータベースやバックグラウンドデーモンは不要です。
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## 確認できる内容
 
 - **概要（`/stats`）：** 合計トークン、記録されたUSDコスト、セッション数、モデルSteps、日別アクティビティ、トークン内訳、必要に応じて取得できる日別トークン推移。

@@ -29,6 +29,8 @@
 
 OpenCode Mini 또는 전체 TUI에서 언제든 **`/usage-dashboard`** 명령을 실행해 대시보드를 열 수 있습니다. 별도의 데이터베이스나 상시 실행 데몬 없이 OpenCode 플러그인 프로세스 안에서 가볍게 동작합니다.
 
+![OpenCode Usage Dashboard](screenshot.png)
+
 ## 주요 기능
 
 - **개요 (`/stats`):** 전체 토큰, 기록된 USD 비용, 세션 수, 모델 Steps, 날짜별 활동량, 토큰 구성 비율 및 일별 토큰 추이를 확인합니다.
